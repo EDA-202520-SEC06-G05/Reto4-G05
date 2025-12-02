@@ -1,9 +1,11 @@
 import time
 import os 
 import csv
+from datetime import datetime as dt
 from DataStructures.List import array_list as al
 from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Graph import digraph as dg
+from DataStructures.Graph import vertex as v
 from math import radians, cos, sin, asin, sqrt
 
 data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/Challenge-4'
@@ -20,25 +22,103 @@ def new_logic():
     }
     return analyzer
     #TODO: Llama a las funciónes de creación de las estructuras de datos
-    pass
-
-
+    
 # Funciones para la carga de datos
-
+def cambio_datetime(horas):
+    
+    pass
+    
+    
 def load_data(catalog, filename):
     """
     Carga los datos del reto
     """
-    catalog["event"] = load_grullas(catalog["event"])
+    retorno = load_grullas(catalog["event"])
     
+    return retorno
+
     # TODO: Realizar la carga de datos
-    pass
+    
+def time_to_minutes(t):
+    fecha, hora = t.split(" ")
+    hh, mm, ss = hora.split(":")
+    return int(hh)*60 + int(mm)                
+            
+# Funciones de consulta sobre el catálogo
+def load_graph_distance(catalog):
+    
+    lista = catalog["events"]
+    graph = catalog["graph_distance"]
+    mapa = catalog["events_by_tags"]
+    
+    for i in range(al.size(lista)):
+        
+        each = al.get_element(lista, i)
+        assigned = False
+        longitude = each["location-long"]
+        latitude = each["location-lat"]
+        time = each["timestamp"]
+        id = each["event-id"]
+        distance = each["comments"]
+        identi = each["tag-local-identifier"]
+        
+        if dg.order(graph) == 0:
+            
+            vertex_info = {
+                "events": al.new_list(),
+                "lon":longitude,
+                "lat":latitude,
+                "tiempo": time,
+                "tag_identifiers": al.new_list(),
+                "distance": distance,
+                "events_count": 1
+            }
+            al.add_last(vertex_info["events"], each)
+            al.add_last(vertex_info["tag_identifiers"], id)
+            dg.insert_vertex(graph, id, vertex_info)
+            lp.put(mapa,id,id)
+        else:
+            lista_vertices = dg.vertices(graph)
+            i = 0
+            assigned = False
+            while i < lista_vertices["size"] and not assigned:
+                key = al.get_element(lista_vertices, i)
+                ver = dg.get_vertex(graph, key)
+                t1 = ver["value"]["timestamp"]
+                time_dif = abs(time_to_minutes(t1) - time_to_minutes(time))
+                harv = haversine(ver["value"]["lon"], ver["value"]["lat"], longitude, latitude)
+                
+                if harv < 3 and time_dif < 180:
+                    ver["events_count"] += 1  
+                    array = ver["tag_identifiers"]
+                    array_1 = ver["events"]
+                    ver["tag_identifiers"] = al.add_last(array,id)
+                    ver["events"] =al.add_last(array_1,each)
+                    lp.put(mapa,id.key)
+            if not assigned:
+                vertex_info = {
+                "events": al.new_list(),
+                "lon":longitude,
+                "lat":latitude,
+                "tiempo": time,
+                "tag_identifiers": al.new_list(),
+                "distance": distance,
+                "events_count": 1
+            }
+            al.add_last(vertex_info["events"], each)
+            al.add_last(vertex_info["tag_identifiers"], id)
+            dg.insert_vertex(graph, id, vertex_info)
+            lp.put(mapa,id,id)
+            
+    return catalog
+
 
 def load_grullas(catalog):
     flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
     input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
     
     for each in input_file:
+        each["timestamp"] = dt.strptime(each["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
         al.add_last(catalog,each)
 
     def default_sort(a1,a2):
@@ -49,23 +129,22 @@ def load_grullas(catalog):
     return catalog
 
 def haversine(lon1, lat1, lon2, lat2):
-    """
-    Calculate the great circle distance in kilometers between two points 
-    on the earth (specified in decimal degrees)
-    """
-    # convert decimal degrees to radians 
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
 
-    # haversine formula 
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+ 
     dlon = lon2 - lon1 
     dlat = lat2 - lat1 
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a)) 
-    r = 6371 # Radius of earth in kilometers. Use 3956 for miles. Determines return value units.
+    r = 6371 
     return c * r
-# Funciones de consulta sobre el catálogo
 
-
+def agrupar_eventos_por_grulla(lista_eventos):
+    por_grulla = {}
+    
+    
+    
+    
 def req_1(catalog):
     """
     Retorna el resultado del requerimiento 1
