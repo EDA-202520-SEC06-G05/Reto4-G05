@@ -54,13 +54,13 @@ def load_graph_distance(catalog):
     for i in range(al.size(lista)):
         
         each = al.get_element(lista, i)
-        assigned = False
-        longitude = each["location-long"]
-        latitude = each["location-lat"]
+        
+        longitude = float(each["location-long"])
+        latitude = float(each["location-lat"])
         time = each["timestamp"]
         id = each["event-id"]
-        distance = each["comments"]
-        identi = each["tag-local-identifier"]
+        distance = float(each["comments"])
+        tag = each["tag-local-identifier"]
         
         if dg.order(graph) == 0:
             
@@ -70,11 +70,12 @@ def load_graph_distance(catalog):
                 "lat":latitude,
                 "tiempo": time,
                 "tag_identifiers": al.new_list(),
-                "distance": distance,
+                "distance": al.new_list(),
                 "events_count": 1
             }
             al.add_last(vertex_info["events"], each)
-            al.add_last(vertex_info["tag_identifiers"], id)
+            al.add_last(vertex_info["tag_identifiers"], tag)
+            al.add_last(vertex_info["distance"], distance)
             dg.insert_vertex(graph, id, vertex_info)
             lp.put(mapa,id,id)
         else:
@@ -84,17 +85,21 @@ def load_graph_distance(catalog):
             while i < lista_vertices["size"] and not assigned:
                 key = al.get_element(lista_vertices, i)
                 ver = dg.get_vertex(graph, key)
-                t1 = ver["value"]["timestamp"]
-                time_dif = abs(time_to_minutes(t1) - time_to_minutes(time))
-                harv = haversine(ver["value"]["lon"], ver["value"]["lat"], longitude, latitude)
+                data = ver["value"]
+                
+                harv = haversine(data["lon"], data["lat"], longitude, latitude)
+                time_dif = abs(time_to_minutes(time) - time_to_minutes(data["tiempo"]))
                 
                 if harv < 3 and time_dif < 180:
+                    
                     ver["events_count"] += 1  
-                    array = ver["tag_identifiers"]
-                    array_1 = ver["events"]
-                    ver["tag_identifiers"] = al.add_last(array,id)
-                    ver["events"] =al.add_last(array_1,each)
-                    lp.put(mapa,id.key)
+                    al.add_last(data["events"], each)
+                    al.add_last(data["tag_identifiers"], tag)
+                    al.add_last(data["distance"],distance)
+                    lp.put(mapa,id,key)
+                    assigned = True
+                i+=1
+                
             if not assigned:
                 vertex_info = {
                 "events": al.new_list(),
@@ -102,16 +107,95 @@ def load_graph_distance(catalog):
                 "lat":latitude,
                 "tiempo": time,
                 "tag_identifiers": al.new_list(),
-                "distance": distance,
+                "distance": al.new_list(),
                 "events_count": 1
             }
             al.add_last(vertex_info["events"], each)
-            al.add_last(vertex_info["tag_identifiers"], id)
+            al.add_last(vertex_info["tag_identifiers"], tag)
             dg.insert_vertex(graph, id, vertex_info)
             lp.put(mapa,id,id)
             
     return catalog
 
+def construir_arcos_distancia(catalog):
+    eventos = catalog["event"]
+    tags_events = catalog["event_by_tags"]
+    grafo = catalog["graph_distance"]
+    
+    trips = lp.new_map(200000, 0.7, None)
+    groups = lp.new_map(2000, 0.7, None)
+    
+    table = eventos["elements"]
+    i = 0
+    while i < eventos["size"]:
+        each = al.get_element(eventos, i)
+        tag = each["tag-local-identifier"]
+        lista_tag = lp.get(groups, tag)
+        if lista_tag is None:
+            lista_tag = al.new_list()
+            lp.put(groups, tag, lista_tag)
+        al.add_last(lista_tag, each)
+        i+=1
+        
+    tabla_groups = groups["table"]["elements"]
+    g = 0
+    while g < al.size(tabla_groups):
+        slot = al.get_element(tabla_groups, g)
+        if slot["key"] is not None:
+            lista_ev = slot["value"]
+            prev_node = None
+            
+            j = 0
+            ev_elem = lista_ev["elements"]
+            while j < lista_ev["size"]:
+                ev = al.get_element(ev_elem, j)
+                event_id = ev["event-id"]
+                
+                nodo_entry = lp.get(tags_events)
+                if nodo_entry is not None:
+                    actual = nodo_entry["value"]
+                    if prev_node is not None and actual != prev_node:
+                        vertA = dg.get_vertex(grafo, prev_node)
+                        vertB = dg.get_vertex(grafo, actual)
+                        
+                        infoA = vertA["value"]["value"]
+                        infoB = vertB["value"]["value"]
+                        
+                        dist = haversine(infoA["lon"], infoA["lat"], infoB["lon"], infoB["lat"])
+                        
+                        key = prev_node + "->" + actual
+                        lista_dist = lp.get(trips, key)
+                        if lista_dist is None:
+                            list_dist = al.new_list()
+                            lp.put(trips, key, list_dist)
+                        al.add_last(list_dist, dist)
+                        
+                    prev_node = actual
+                j += 1
+        g += 1
+    trip_table = trips["table"]["elements"]
+    k = 0
+    while k < al.size(trip_table):
+        other = al.get_element(trip_table, k)
+        if other["key"] is not None:
+            key = slot["key"]
+            lista_dist = slot["value"]
+            parts = key.split("->")
+            A = parts[0]
+            B = parts[1]
+            
+            suma = 0
+            ls = list_dist["elements"]
+            t = 0
+            while t < list_dist["size"]:
+                distan = al.get_element(ls, t)
+                suma += distan
+                t += 1
+            average = suma / lista_dist["size"]
+            dg.add_edge(grafo, A, B, average)
+        k += 1
+    return catalog
+    
 
 def load_grullas(catalog):
     flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
