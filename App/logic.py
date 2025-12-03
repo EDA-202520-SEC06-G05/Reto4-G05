@@ -5,7 +5,9 @@ from datetime import datetime as dt
 from DataStructures.List import array_list as al
 from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Graph import digraph as dg
-from DataStructures.Graph import vertex as v
+from DataStructures.Graph import vertex as vt
+from DataStructures.Graph import bfs as bfs
+from DataStructures.Stack import stack as st
 from math import radians, cos, sin, asin, sqrt
 
 data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/Challenge-4'
@@ -237,13 +239,98 @@ def req_1(catalog):
     pass
 
 
-def req_2(catalog):
+def req_2(catalog, gps_origen, gps_destino, radio):
     """
     Retorna el resultado del requerimiento 2
     """
-    # TODO: Modificar el requerimiento 2
-    pass
+    lat_origen = gps_origen[0]
+    lon_origen = gps_origen[1]
+    lat_dest = gps_destino[0]
+    lon_dest = gps_destino[1]
 
+    grafo = catalog["graph_distance"]
+    vertex_list = dg.vertices(grafo)
+    nodoA = None
+    nodoB = None
+    bestA = 999999999
+    bestB = 999999999
+    
+    i = 0
+    while i < vertex_list["size"]:
+        each = al.get_element(vertex_list, i)
+        vert = dg.get_vertex(grafo, each)
+        info = vert["value"]
+        lat = info["lat"]
+        lon = info["lon"]
+        
+        distA = haversine(lon_origen, lat_origen, lon, lat)
+        distB = haversine(lon_dest, lat_dest, lon, lat)
+        
+        if distA < bestA:
+            bestA = distA
+            nodoA = each
+        if distB < bestB:
+            bestB = distB
+            nodoB = each
+        
+        i+=1
+    visit = bfs.bfs(grafo, nodoA)
+    if not bfs.has_path_to(nodoB, visit):
+        return {
+            "mensaje": "No existe ningun camino entre los puntos.",
+            "ruta": None
+        }
+    path = bfs.path_to(nodoB, visit)
+    last = None
+    temp_stack = st.new_stack()
+    
+    while not st.is_empty(path):
+        ver = st.pop(path)
+        st.push(temp_stack, ver)
+        
+        vert = dg.get_vertex(grafo, ver)
+        info = vert["value"]
+        lat = info["lat"]
+        lon = info["lon"]
+        
+        d = haversine(lon_origen, lat_origen, lon, lat)
+        if d <= radio:
+            ultimo = ver
+    path["elements"] = temp_stack["elements"]
+    path["size"] = temp_stack["size"]
+    
+    total_distance = 0
+    path_list = al.new_list()
+    temp2 = st.new_stack()
+    while not st.is_empty(path):
+        v = st.pop(path)
+        st.push(temp2, v)
+        al.add_last(path_list, v)
+    path["elements"] = temp2["elements"]
+    path["size"] = temp2["size"]
+    
+    prev = None
+    elems_ruta = path_list["elements"]
+    j = 0
+    while j < path_list["size"]:
+        v = al.get_element(elems_ruta, j)
+        if prev is not None:
+            vert_prev = dg.get_vertex(grafo, prev)
+            edge = vt.get_edge(vert_prev, v)
+            if edge is not None:
+                total_distance = total_distance + edge["weight"]
+        prev = v
+        j+=1
+    total_points = path_list["size"]
+    return {
+        "mensaje": "Ruta encontrada",
+        "ultimo_dentro_radio": last,
+        "distancia_total": total_distance,
+        "total_puntos": total_points, 
+        "ruta": path_list
+    }
+    # TODO: Modificar el requerimiento 2
+    
 
 def req_3(catalog):
     """
