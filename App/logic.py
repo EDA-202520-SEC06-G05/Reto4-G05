@@ -12,7 +12,8 @@ from DataStructures.Graph import bfs as bfs
 from DataStructures.Stack import stack as st
 from DataStructures.Graph import dijkstra as dj
 from DataStructures.Graph import edge as ed
-
+from DataStructures.Graph import prim as pm
+from DataStructures.Queue import queue as queue 
 from math import radians, cos, sin, asin, sqrt
 
 data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/Challenge-4'
@@ -707,9 +708,6 @@ def req_3(catalog):
     """
     Retorna el resultado del requerimiento 3
     """
-    """
-    Retorna el resultado del requerimiento 3
-    """
     nicho_biologico = catalog["graph_distance"]
     answer = {
         "vertices" : 0,
@@ -743,7 +741,6 @@ def req_3(catalog):
     else:
         return ("Se presentaron ciclos dentro del grafo a realizar dfo")
     # TODO: Modificar el requerimiento 3
-    pass
 
 def req_4(catalog,lon,lat):
     """
@@ -891,15 +888,6 @@ def req_4(catalog,lon,lat):
         return answer
     # TODO: Modificar el requerimiento 3
     pass
-
-
-def req_4(catalog):
-    """
-    Retorna el resultado del requerimiento 4
-    """
-    # TODO: Modificar el requerimiento 4
-    pass
-
 
 def req_5(catalog, pto_origen, pto_destino, seleccion):
     """

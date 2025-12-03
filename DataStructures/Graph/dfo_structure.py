@@ -1,3 +1,4 @@
+
 from DataStructures.Queue import queue
 from DataStructures.Stack import stack
 from DataStructures.Map import map_linear_probing as map
@@ -5,14 +6,14 @@ from DataStructures.Map import map_linear_probing as map
 
 def new_dfo_structure(g_order):
     """
-    Crea una estructura de busqueda usada en el algoritmo **depth_first_order**.
+    Crea una estructura de busqueda usada en el algoritmo *depth_first_order*.
 
     Se crea una estructura de busqueda con los siguientes atributos:
 
-    - **marked**: Mapa con los vertices visitados. Se inicializa en ``None``
-    - **pre**: Cola con los vertices visitados en preorden. Se inicializa como una cola vacia.
-    - **post**: Cola con los vertices visitados en postorden. Se inicializa como una cola vacia.
-    - **reversepost**: Pila con los vertices visitados en postorden inverso. Se inicializa como una pila vacia.
+    - *marked*: Mapa con los vertices visitados. Se inicializa en `None`
+    - *pre*: Cola con los vertices visitados en preorden. Se inicializa como una cola vacia.
+    - *post*: Cola con los vertices visitados en postorden. Se inicializa como una cola vacia.
+    - *reversepost*: Pila con los vertices visitados en postorden inverso. Se inicializa como una pila vacia.
 
     :returns: Estructura de busqueda
     :rtype: dfo_search
