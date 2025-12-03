@@ -17,42 +17,67 @@ def new_logic():
     Crea el catalogo para almacenar las estructuras de datos
     """
     analyzer = {
-    "event" : al.newlist(), # La parte de los elementos organizados por el timestap
+    "event" : al.new_list(), # La parte de los elementos organizados por el timestap
     "events_by_tags" : lp.new_map(40,0.5,None), #Cada una de las grullas con su nodo de referencia
-    "graph_distance" : dg.new_graph(None),
-    "graph_water":dg.new_graph(None)
+    "graph_distance" : dg.new_graph(20),
+    "graph_water":dg.new_graph(20)
     }
     return analyzer
     #TODO: Llama a las funciónes de creación de las estructuras de datos
     
 # Funciones para la carga de datos
+def haversine(lon1, lat1, lon2, lat2):
+
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 6371 
+    return c * r
+
 def cambio_datetime(horas):
     
     pass
-    
-    
+
+def time_to_minutes(t):
+    fecha, hora = t.split(" ")
+    hh, mm, ss = hora.split(":")
+    return int(hh)*60 + int(mm) 
+
 def load_data(catalog, filename):
     """
     Carga los datos del reto
     """
     retorno = load_grullas(catalog["event"])
-    
+    load_graph_distance(catalog)
+    catalog["graph_water"] = catalog["graph_distance"]
     return retorno
 
     # TODO: Realizar la carga de datos
-    
-def time_to_minutes(t):
-    fecha, hora = t.split(" ")
-    hh, mm, ss = hora.split(":")
-    return int(hh)*60 + int(mm)                
-            
 # Funciones de consulta sobre el catálogo
+
+def load_grullas(catalog):
+    flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
+    input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
+    
+    for each in input_file:
+        each["timestamp"] = dt.strptime(each["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+        al.add_last(catalog,each)
+
+    def default_sort(a1,a2):
+        if a1["timestamp"] < a2["timestamp"]:
+            return True
+        return False
+    al.merge_sort(catalog,default_sort)
+    return catalog
+
 def load_graph_distance(catalog):
     
     lista = catalog["events"]
     graph = catalog["graph_distance"]
     mapa = catalog["events_by_tags"]
-    
+    id_graph = al.new_list()
     for i in range(al.size(lista)):
         
         each = al.get_element(lista, i)
@@ -79,6 +104,7 @@ def load_graph_distance(catalog):
             al.add_last(vertex_info["tag_identifiers"], tag)
             al.add_last(vertex_info["distance"], distance)
             dg.insert_vertex(graph, id, vertex_info)
+            al.add_last(id_graph,id)
             lp.put(mapa,id,id)
         else:
             lista_vertices = dg.vertices(graph)
@@ -115,8 +141,17 @@ def load_graph_distance(catalog):
             al.add_last(vertex_info["events"], each)
             al.add_last(vertex_info["tag_identifiers"], tag)
             dg.insert_vertex(graph, id, vertex_info)
+            al.add_last(id_graph,id)
             lp.put(mapa,id,id)
-            
+    for each in id_graph:
+        node = dg.get_vertex(graph,each)
+        value = node["value"]
+        distance = value["distance"]
+        sum = 0
+        for i in distance:
+            sum += i
+        sum = sum / al.size(distance)
+        value["distance"] = sum
     return catalog
 
 def construir_arcos_distancia(catalog):
@@ -197,40 +232,78 @@ def construir_arcos_distancia(catalog):
             dg.add_edge(grafo, A, B, average)
         k += 1
     return catalog
-    
 
-def load_grullas(catalog):
-    flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
-    input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
-    
-    for each in input_file:
-        each["timestamp"] = dt.strptime(each["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
-        al.add_last(catalog,each)
+def build_water_edges(catalog):
+    events_array = catalog["event"]
+    mapa_id = catalog["event_by_tags"]
+    graph = catalog["graph_water"]
+    trips = lp.new_map(200000, 0.7, None)
+    groups = lp.new_map(2000, 0.7, None)
+    i = 1
+    while i <= events_array["size"]:
+        each = al.get_element(events_array, i)
+        tag = each["tag-local-identifier"]
+        entry = lp.get(groups, tag)
+        if entry is None:
+            lista_tag = al.new_list()
+            lp.put(groups, tag, lista_tag)
+        else:
+            lista_tag = lp.get(groups,entry)
+            al.add_last(lista_tag, each)
+        i += 1
+        
+    tabla_groups = groups["table"]["elements"]
+    g = 0
+    while g < al.size(tabla_groups):
+        slot = al.get_element(tabla_groups, g)
+        if slot is not None:
+            lista_ev = slot["value"]      
+            prev_node = None              
+            j = 1
+            while j <= lista_ev["size"]:
+                ev = al.get_element(lista_ev, j)
+                event_id = ev["event-id"]
+                nodo_entry = lp.get(mapa_id, event_id)
+                if nodo_entry is not None:
+                    actual = lp.get(mapa_id,nodo_entry)   
+                    if prev_node is not None and actual != prev_node:
+                        vertB = dg.get_vertex(graph, actual)
+                        infoB = vertB["value"]
+                        prom_agua_B = infoB["distance"]
+                        key = prev_node + "->" + actual
+                        lista_entry = lp.get(trips, key)
+                        if lista_entry is None:
+                            lista_dist = al.new_list()
+                            lp.put(trips, key, lista_dist)
+                        else:
+                            lista_dist = lp.get(trips,key)
+                        al.add_last(lista_dist, prom_agua_B)
+                    prev_node = actual
+                j += 1
+        g += 1
+    trip_table = trips["table"]["elements"]
+    k = 0
+    while k < al.size(trip_table):
+        other = al.get_element(trip_table, k)
+        if other["key"] is not None:
+            key = other["key"]
+            lista_dist = other["value"]
 
-    def default_sort(a1,a2):
-        if a1["timestamp"] < a2["timestamp"]:
-            return True
-        return False
-    al.merge_sort(catalog,default_sort)
+            parts = key.split("->")
+            a = parts[0]
+            b = parts[1]
+            suma = 0
+            t = 1
+            while t <= lista_dist["size"]:
+                val = al.get_element(lista_dist, t)
+                suma += val
+                t += 1
+            average = suma / lista_dist["size"]
+            dg.add_edge(graph, a, b, average)
+        k += 1
     return catalog
 
-def haversine(lon1, lat1, lon2, lat2):
 
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
- 
-    dlon = lon2 - lon1 
-    dlat = lat2 - lat1 
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a)) 
-    r = 6371 
-    return c * r
-
-def agrupar_eventos_por_grulla(lista_eventos):
-    por_grulla = {}
-    
-    
-    
-    
 def req_1(catalog):
     """
     Retorna el resultado del requerimiento 1
