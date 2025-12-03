@@ -1,7 +1,6 @@
 from DataStructures.List import single_linked_list as all
 
 def new_stack ():
-    
     new_stack = all.new_list()
     return new_stack 
 

@@ -6,6 +6,8 @@ from DataStructures.List import array_list as al
 from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Graph import digraph as dg
 from DataStructures.Graph import vertex as vt
+from DataStructures.Graph import dfs
+from DataStructures.Graph import dfo 
 from DataStructures.Graph import bfs as bfs
 from DataStructures.Stack import stack as st
 from math import radians, cos, sin, asin, sqrt
@@ -122,7 +124,13 @@ def load_graph_distance(catalog):
                     
                     ver["events_count"] += 1  
                     al.add_last(data["events"], each)
-                    al.add_last(data["tag_identifiers"], tag)
+                    array = data["tag_identifiers"]
+                    def cmp (a,b):
+                        if a == b:
+                            return 0
+                        return -1
+                    if al.is_present(array,tag,cmp) < 0:
+                        al.add_last(data["tag_identifiers"], tag)
                     al.add_last(data["distance"],distance)
                     lp.put(mapa,id,key)
                     assigned = True
@@ -409,6 +417,29 @@ def req_3(catalog):
     """
     Retorna el resultado del requerimiento 3
     """
+    nicho_biologico = catalog["graph_distance"]
+    answer = {
+        "vertices" : 0,
+        "pajaros" : 0,        
+    }
+    graph, centinela = dfs.dfs(nicho_biologico,"8087306349")
+    if centinela:
+        post_reversed = dfo.dfo(nicho_biologico)
+        post_reversed = post_reversed["reversepost"]
+        array = al.new_list
+        first = al.new_list()
+        last = al.new_list()
+        pajaros= 0
+        while st.is_empty(post_reversed):
+            vertex = dg.get_vertex(nicho_biologico,st.pop(post_reversed))["value"]
+            dict_clean = {
+                "id": 
+            }
+            
+            
+
+    else:
+        return ("Se presentaron ciclos dentro del grafo a realizar dfo")
     # TODO: Modificar el requerimiento 3
     pass
 
