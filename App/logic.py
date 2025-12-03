@@ -6,6 +6,8 @@ from DataStructures.List import array_list as al
 from DataStructures.Map import map_linear_probing as lp
 from DataStructures.Graph import digraph as dg
 from DataStructures.Graph import vertex as vt
+from DataStructures.Graph import dfs
+from DataStructures.Graph import dfo 
 from DataStructures.Graph import bfs as bfs
 from DataStructures.Stack import stack as st
 from DataStructures.Graph import dijkstra as dj
@@ -19,10 +21,10 @@ def new_logic():
     Crea el catalogo para almacenar las estructuras de datos
     """
     analyzer = {
-    "event" : al.newlist(), # La parte de los elementos organizados por el timestap
+    "event" : al.new_list(), # La parte de los elementos organizados por el timestap
     "events_by_tags" : lp.new_map(40,0.5,None), #Cada una de las grullas con su nodo de referencia
-    "graph_distance" : dg.new_graph(None),
-    "graph_water":dg.new_graph(None)
+    "graph_distance" : dg.new_graph(20),
+    "graph_water":dg.new_graph(20)
     }
     return analyzer
     #TODO: Llama a las funciónes de creación de las estructuras de datos
@@ -31,7 +33,6 @@ def new_logic():
 def haversine(lon1, lat1, lon2, lat2):
 
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
- 
     dlon = lon2 - lon1 
     dlat = lat2 - lat1 
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
@@ -39,24 +40,27 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6371 
     return c * r
 
+def cambio_datetime(horas):
+    
+    pass
+
 def time_to_minutes(t):
     fecha, hora = t.split(" ")
     hh, mm, ss = hora.split(":")
-    return int(hh)*60 + int(mm)                
-            
+    return int(hh)*60 + int(mm) 
 
 def load_data(catalog, filename):
     """
     Carga los datos del reto
     """
-    load_grullas(catalog["event"])
+    retorno = load_grullas(catalog["event"])
     load_graph_distance(catalog)
-    build_water_vertices(catalog)
-    construir_arcos_distancia(catalog)
-    construir_arcos_water(catalog)
-    return catalog
-    # TODO: Realizar la carga de datos     
-              
+    catalog["graph_water"] = catalog["graph_distance"]
+    return retorno
+
+    # TODO: Realizar la carga de datos
+# Funciones de consulta sobre el catálogo
+
 def load_grullas(catalog):
     flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
     input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
@@ -71,8 +75,7 @@ def load_grullas(catalog):
         return False
     al.merge_sort(catalog,default_sort)
     return catalog
-          
-# Funciones de consulta sobre el catálogo
+
 def load_graph_distance(catalog):
     lista = catalog["event"]              # Lista de todos los eventos ordenados
     graph = catalog["graph_distance"]     # Grafo de distancia migratoria
@@ -608,6 +611,29 @@ def req_3(catalog):
     """
     Retorna el resultado del requerimiento 3
     """
+    nicho_biologico = catalog["graph_distance"]
+    answer = {
+        "vertices" : 0,
+        "pajaros" : 0,        
+    }
+    graph, centinela = dfs.dfs(nicho_biologico,"8087306349")
+    if centinela:
+        post_reversed = dfo.dfo(nicho_biologico)
+        post_reversed = post_reversed["reversepost"]
+        array = al.new_list
+        first = al.new_list()
+        last = al.new_list()
+        pajaros= 0
+        while st.is_empty(post_reversed):
+            vertex = dg.get_vertex(nicho_biologico,st.pop(post_reversed))["value"]
+            dict_clean = {
+                "id": 
+            }
+            
+            
+
+    else:
+        return ("Se presentaron ciclos dentro del grafo a realizar dfo")
     # TODO: Modificar el requerimiento 3
     pass
 

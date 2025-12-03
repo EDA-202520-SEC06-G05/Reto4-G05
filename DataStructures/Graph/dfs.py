@@ -4,13 +4,14 @@ from DataStructures.List import array_list as al
 from DataStructures.Stack import stack as st
 
 def dfs(my_graph,source):
+    centinela = True
     visited_map = lp.new_map(lp.size(my_graph["vertices"]),0.5,None)
     vertice_source= lp.get(my_graph["vertices"],source)
     lp.put(visited_map,vertice_source["key"],{"marked":True,"edge_from":None})
-    dfs_vertex(my_graph,vertice_source["key"],visited_map)
-    return visited_map
+    dfs_vertex(my_graph,vertice_source["key"],visited_map,centinela)
+    return visited_map, centinela
 
-def dfs_vertex(my_graph, vertice_source, visited_map):
+def dfs_vertex(my_graph, vertice_source, visited_map,centinela):
     adjacentes_list = dg.adjacents(my_graph,vertice_source)
     if al.size(adjacentes_list)==0:
         return visited_map
@@ -22,8 +23,12 @@ def dfs_vertex(my_graph, vertice_source, visited_map):
             if not lp.contains(visited_map,vertice):
                 lp.put(visited_map,vertice,{"marked":True,"edge_from":vertice_source})
                 dfs_vertex(my_graph,vertice,visited_map)
+            else:
+                info = lp.get(visited_map, vertice)["value"]
+                if info["visiting"] == True:
+                    centinela = False
             i+=1
-        return visited_map
+        return visited_map,centinela
 
 def has_path_to(key_v, visited_map):
     marked = lp.get(visited_map,key_v)
