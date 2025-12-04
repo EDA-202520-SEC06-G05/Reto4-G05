@@ -8,6 +8,8 @@ def new_logic():
     """
         Se crea una instancia del controlador
     """
+    data = lg.new_logic()
+    return data 
     #TODO: Llamar la función de la lógica donde se crean las estructuras de datos
     pass
 
@@ -26,7 +28,8 @@ def load_data(control):
     """
     Carga los datos
     """
-    data = lg.load_data()
+    data = lg.load_data(control)
+    print(data)
     #TODO: Realizar la carga de datos
     pass
 

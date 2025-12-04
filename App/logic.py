@@ -44,11 +44,12 @@ def haversine(lon1, lat1, lon2, lat2):
     return c * r
 
 def time_to_minutes(t):
+    t = str(t)
     fecha, hora = t.split(" ")
     hh, mm, ss = hora.split(":")
     return int(hh)*60 + int(mm) 
 
-def load_data(catalog, filename):
+def load_data(catalog,):
     """
     Carga los datos del reto
     """
@@ -136,12 +137,11 @@ def load_graph_distance(catalog):
 
                 harv = haversine(info_v["lon"], info_v["lat"], lon, lat)
                 time_dif = abs(time_to_minutes(tiempo) - time_to_minutes(info_v["tiempo"]))
-
+                
                 if harv < 3 and time_dif < 180:
                     info_v["events_count"] += 1
-
                     al.add_last(info_v["events"], each)
-
+                    
                     # Añadir tag si no existe
                     def cmp(a, b):
                         if a == b:
@@ -202,7 +202,7 @@ def load_graph_distance(catalog):
             info["distance"] = 0
 
         k += 1
-
+    print(catalog)
     return catalog
 
 def build_water_vertices(catalog):
@@ -218,7 +218,7 @@ def build_water_vertices(catalog):
         vid = al.get_element(lista_vertices, i)
         vert = dg.get_vertex(graph_dist, vid)
         info = vert["value"]
-
+        print(info)
         nueva_info = {
             "events": info["events"],
             "lon": info["lon"],
