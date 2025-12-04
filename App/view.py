@@ -53,26 +53,26 @@ def print_req_1(control):
     print("\n=== RESULTADO REQ 1 ===")
 
     resumen = [
-    ["Primer nodo encontrado", f"{answer['time_ms']}"],
-    ["Distancia total", answer["filtered_number"]],
-    ["Total de puntos", answer["filtered_number"]]
+    ["Primer nodo encontrado", f"{answer['mensaje']}"],
+    ["Distancia total", answer["distancia_total"]],
+    ["Total de puntos", answer["total_puntos"]]
 ]
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
     first = []
-    first_list = answer["first5"]
+    first_list = answer["detalle"]
 
     for i in range(al.size(first_list)):
         flight = al.get_element(first_list, i)
         first.append([
-            flight["id"],
-            flight["flight"],
-            flight["date"],
-            flight["airline_name"],
-            flight["airline_code"],
-            flight["origin"],
+            flight["nombre"],
+            flight["lat"],
+            flight["lon"],
+            flight["n_individuos"],
+            flight["primeros_3"],
+            flight["u3"],
             flight["dest"],
-            flight["delay_minutes"],
+            flight["dist_sig"],
         ])
 
     titulo_first = f"Primeros {len(first)} vertices encontrados"
@@ -82,60 +82,20 @@ def print_req_1(control):
         tabulate(
             first,
             headers=[
-                "ID vuelo",
-                "Código vuelo",
-                "Fecha",
-                "Aerolínea",
-                "Carrier",
-                "Origen",
-                "Destino",
-                "Retraso (min)"
+                "nombre",
+                "lat",
+                "lon",
+                "n_individuos",
+                "primeros_3",
+                "ultimos3",
+                "dest",
+                "dist_sig"
         ],
             tablefmt="grid",
             showindex=range(1, len(first) + 1)
     )
 )
 
-
-    if "last5" in answer:
-        last = []
-        last_list = answer["last5"]
-
-        for i in range(al.size(last_list)):
-            flight = al.get_element(last_list, i)
-            last.append([
-                flight["id"],
-                flight["flight"],
-                flight["date"],
-                flight["airline_name"],
-                flight["airline_code"],
-                flight["origin"],
-                flight["dest"],
-                flight["delay_minutes"],
-        ])
-
-    titulo_last = f"Últimos {len(last)} vertices encontrados"
-    print(f"\n============ {titulo_last} ============\n")
-
-    print(
-        tabulate(
-            last,
-            headers=[
-                "ID vuelo",
-                "Código vuelo",
-                "Fecha",
-                "Aerolínea",
-                "Carrier",
-                "Origen",
-                "Destino",
-                "Retraso (min)"
-            ],
-            tablefmt="grid",
-            showindex=range(1, len(last) + 1)
-        )
-    )
-    
-    
     
     # TODO: Imprimir el resultado del requerimiento 1
     pass
@@ -151,23 +111,16 @@ def print_req_2(control):
     answer = lg.req_2(control,puntos_migratorios,puntos_llegada,radio)
     print("\n=== RESULTADO REQ 2 ===")
     resumen = [
-    ["Ultimo nodo encontrado", f"{answer['time_ms']}"],
-    ["Distancia total", answer["filtered_number"]],],
-    ["Total de puntos", answer["filtered_number"]]
+    ["Mensaje ", f"{answer['mensaje']}"],
+    ["Ultimo nodo encontrado", f"{answer['ultimo_dentro_radio']}"],
+    ["Distancia total", answer["distancia_total"]],],
+    ["Total de puntos", answer["total_puntos"]]
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
     first = []
-    for i in range(answer["first5"]["size"]):
-        flight = al.get_element(answer["first5"], i)
-        first.append([
-        flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["early_minutes"],
+    for i in range(answer["ruta"]["size"]):
+        flight = al.get_element(answer["ruta"], i)
+        first.append([flight
     ])
 
     titulo_first = f"Primeros {len(first)} nodos encontrados"
@@ -175,42 +128,12 @@ def print_req_2(control):
 
     print(tabulate(
         first,
-        headers=[
-        "ID vuelo", "Código vuelo", "Fecha",
-        "Aerolínea", "Carrier", "Origen",
-        "Destino", "Distancia (mi)"
+        headers=["Camino"
         ],
         tablefmt="grid",
         showindex=range(1, len(first) + 1)
 ))
 
-    last = []
-    for i in range(answer["last5"]["size"]):
-        flight = al.get_element(answer["last5"], i)
-        last.append([
-        flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["early_minutes"],
-    ])
-
-    titulo_last = f"Últimos {len(last)} nodos encontrados"
-    print(f"\n============ {titulo_last} ============")
-
-    print(tabulate(
-        last,
-        headers=[
-        "ID vuelo", "Código vuelo", "Fecha",
-        "Aerolínea", "Carrier", "Origen",
-        "Destino", "Distancia (mi)"
-        ],
-        tablefmt="grid",
-        showindex=range(1, len(last) + 1)
-))
     # TODO: Imprimir el resultado del requerimiento 2
     pass
 
@@ -222,23 +145,23 @@ def print_req_3(control):
     answer = lg.req_3(control)
     print("\n=== RESULTADO REQ 3 ===")
     resumen = [
-    ["Total de puntos", f"{answer['time']}"],
-    ["Total de individuos encontrados", answer["total_flights"]],
+    ["Total de puntos", f"{answer['vertices']}"],
+    ["Total de individuos encontrados", answer["pajaros"]],
 ]
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
     first = []
-    for i in range(answer["first"]["size"]):
-        flight = al.get_element(answer["first"], i)
+    for i in range(answer["fisrt"]["size"]):
+        flight = al.get_element(answer["fisrt"], i)
         first.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
+        flight["lon"],
+        flight["lan"],
+        flight["pajaros"],
+        flight["first"],
+        flight["last"],
         flight["dest"],
-        flight["distance"],
+        flight["adyacentes"],
     ])
 
     titulo_first = f"Primeros {len(first)} nodos encontrados"
@@ -247,14 +170,14 @@ def print_req_3(control):
         tabulate(
         first,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "id",
+            "lon",
+            "lan",
+            "pajaros",
+            "first",
+            "last",
+            "dest",
+            "adyacentes",
         ],
         tablefmt="grid",
         showindex=range(1, len(first) + 1)
@@ -266,13 +189,13 @@ def print_req_3(control):
         flight = al.get_element(answer["last"], i)
         last.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
+        flight["lon"],
+        flight["lan"],
+        flight["pajaros"],
+        flight["first"],
+        flight["last"],
         flight["dest"],
-        flight["distance"],
+        flight["adyacentes"],
     ])
 
     titulo_last = f"Últimos {len(last)} nodos encontrados"
@@ -281,14 +204,14 @@ def print_req_3(control):
     tabulate(
         last,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "id",
+            "lon",
+            "lan",
+            "pajaros",
+            "first",
+            "last",
+            "dest",
+            "adyacentes",
         ],
         tablefmt="grid",
         showindex=range(1, len(last) + 1)
@@ -307,24 +230,22 @@ def print_req_4(control):
     print("\n=== RESULTADO REQ 4 ===")
 
     resumen = [
-    ["Total de puntos", f"{answer['time']}"],
-    ["Total de individuos encontrados", answer["total_flights"]],
-    ["Total de distancia", answer["total_flights"]]
+    ["Total de puntos", f"{answer['total_vertice']}"],
+    ["Total de individuos encontrados", answer["total_individuos"]],
+    ["Total de distancia", answer["distancia_total"]]
 ]
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
     first = []
-    for i in range(answer["first"]["size"]):
-        flight = al.get_element(answer["first"], i)
+    for i in range(answer["primeros_5"]["size"]):
+        flight = al.get_element(answer["primeros_5"], i)
         first.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
+        flight["lon"],
+        flight["lat"],
+        flight["num_pajaros"],
+        flight["first_tags"],
+        flight["last_tags"],
     ])
 
     titulo_first = f"Primeros {len(first)} nodos encontrados"
@@ -333,14 +254,12 @@ def print_req_4(control):
         tabulate(
         first,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "ID",
+            "lon",
+            "lat",
+            "num_pajaros",
+            "first_tags",
+            "last_tags",
         ],
         tablefmt="grid",
         showindex=range(1, len(first) + 1)
@@ -348,17 +267,15 @@ def print_req_4(control):
 )
 
     last = []
-    for i in range(answer["last"]["size"]):
-        flight = al.get_element(answer["last"], i)
+    for i in range(answer["ultimos_5"]["size"]):
+        flight = al.get_element(answer["ultimos_5"], i)
         last.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
+        flight["lon"],
+        flight["lat"],
+        flight["num_pajaros"],
+        flight["first_tags"],
+        flight["last_tags"],
     ])
 
     titulo_last = f"Últimos {len(last)} nodos encontrados"
@@ -367,14 +284,12 @@ def print_req_4(control):
     tabulate(
         last,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "ID",
+            "lon",
+            "lat",
+            "num_pajaros",
+            "first_tags",
+            "last_tags",
         ],
         tablefmt="grid",
         showindex=range(1, len(last) + 1)
@@ -396,24 +311,26 @@ def print_req_5(control):
     print("\n=== RESULTADO REQ 4 ===")
 
     resumen = [
-    ["El costo total que tomará el individuo en distancia", f"{answer['time']}"],
-    ["El total de puntos que contiene el camino", answer["total_flights"]],
-    ["El total de segmentos que conforman la ruta identificad", answer["total_flights"]]
+    ["Ruta optima encontrada", f"{answer['mensaje']}"],
+    ["El costo total que tomará el individuo en distancia", f"{answer['cost']}"],
+    ["El total de puntos que contiene el camino", answer["total_points"]],
+    ["El total de segmentos que conforman la ruta identificad", answer["total_segments"]],
+    ["Ruta identificada", answer["full_route"]]
 ]
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
     first = []
-    for i in range(answer["first"]["size"]):
-        flight = al.get_element(answer["first"], i)
+    for i in range(answer["first_nodes"]["size"]):
+        flight = al.get_element(answer["first_nodes"], i)
         first.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
+        flight["lat"],
+        flight["lon"],
+        flight["num_grullas"],
+        flight["first3"],
+        flight["last3"],
+        flight["events"],
+        flight["dnext"],
     ])
 
     titulo_first = f"Primeros {len(first)} nodos encontrados"
@@ -422,14 +339,14 @@ def print_req_5(control):
         tabulate(
         first,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "ID",
+            "lat",
+            "lon",
+            "num_grullas",
+            "first3",
+            "last3",
+            "events",
+            "dnext",
         ],
         tablefmt="grid",
         showindex=range(1, len(first) + 1)
@@ -437,17 +354,17 @@ def print_req_5(control):
 )
 
     last = []
-    for i in range(answer["last"]["size"]):
-        flight = al.get_element(answer["last"], i)
+    for i in range(answer["last_nodes"]["size"]):
+        flight = al.get_element(answer["last_nodes"], i)
         last.append([
         flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
+        flight["lat"],
+        flight["lon"],
+        flight["num_grullas"],
+        flight["first3"],
+        flight["last3"],
+        flight["events"],
+        flight["dnext"],
     ])
 
     titulo_last = f"Últimos {len(last)} nodos encontrados"
@@ -456,14 +373,14 @@ def print_req_5(control):
     tabulate(
         last,
         headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
+            "ID",
+            "lat",
+            "lon",
+            "num_grullas",
+            "first3",
+            "last3",
+            "events",
+            "dnext",
         ],
         tablefmt="grid",
         showindex=range(1, len(last) + 1)
@@ -474,9 +391,100 @@ def print_req_5(control):
 
 
 def print_req_6(control):
-    """
-        Función que imprime la solución del Requerimiento 6 en consola
-    """
+    answer = lg.req_6(control)
+
+    if answer["subredes"] is None or answer["total_subredes"] == 0:
+        print("\n=== RESULTADO REQ 6 ===")
+        print("No se identificaron subredes hídricas")
+        return
+
+    total_subredes = answer["total_subredes"]
+    top_subredes = answer["top_subredes"]
+
+    print("\n=== RESULTADO REQ 6 ===")
+    print(f"Total de subredes identificadas: {total_subredes}\n")
+
+    resumen = []
+    i = 1
+    while i <= al.size(top_subredes):
+        sub = al.get_element(top_subredes, i)
+        resumen.append([
+            sub["subred_id"],
+            sub["total_puntos"],
+            sub["total_individuos"],
+            sub["min_lat"],
+            sub["max_lat"],
+            sub["min_lon"],
+            sub["max_lon"]
+        ])
+        i += 1
+
+    print(tabulate(
+        resumen,
+        headers=[
+            "ID Subred",
+            "Total puntos",
+            "Total individuos",
+            "Lat mínima",
+            "Lat máxima",
+            "Lon mínima",
+            "Lon máxima"
+        ],
+        tablefmt="grid",
+        showindex=range(1, len(resumen) + 1)
+    ))
+
+    i = 1
+    while i <= al.size(top_subredes):
+        sub = al.get_element(top_subredes, i)
+        print(f"\n=== Detalle de la subred {sub['subred_id']} ===")
+        puntos = sub["puntos"]
+
+        detalle = []
+        j = 1
+        while j <= al.size(puntos):
+            p = al.get_element(puntos, j)
+
+            primeros3 = p["primeros_3"]
+            ultimos3 = p["ultimos_3"]
+
+            prim = []
+            k = 1
+            while k <= al.size(primeros3):
+                prim.append(al.get_element(primeros3, k))
+                k += 1
+
+            ult = []
+            k = 1
+            while k <= al.size(ultimos3):
+                ult.append(al.get_element(ultimos3, k))
+                k += 1
+
+            detalle.append([
+                p["nid"],
+                p["lat"],
+                p["lon"],
+                p["n_individuos"],
+                ", ".join(str(x) for x in prim) if prim else "Unknown",
+                ", ".join(str(x) for x in ult) if ult else "Unknown"
+            ])
+            j += 1
+
+        print(tabulate(
+            detalle,
+            headers=[
+                "Nodo",
+                "Latitud",
+                "Longitud",
+                "# Individuos",
+                "Primeros 3 tags",
+                "Últimos 3 tags"
+            ],
+            tablefmt="grid",
+            showindex=range(1, len(detalle) + 1)
+        ))
+
+        i += 1
     # TODO: Imprimir el resultado del requerimiento 6
     pass
 

@@ -965,6 +965,121 @@ def req_4(catalog,lon,lat):
 
     if al.size(edges) == 0:
         return "No se encontró una red hídrica viable desde el origen especificado"
+    else:
+        distancia_total = pm.weight_mst(graph, prim)
+        answer["distancia_total"] = distancia_total
+        visited = prim["visited"]
+        tabla = visited["table"]["elements"]
+        total_vertices = 0
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                info = slot["value"]
+                if info["marked"] is True:
+                    total_vertices += 1
+            i += 1
+        answer["total_vertice"] = total_vertices 
+        map_tags = lp.new_map(2000, 0.5, None)
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                vid = slot["key"]
+                info = slot["value"]
+                if info["marked"] is True:
+                    vert_info = dg.get_vertex(graph, vid)["value"]
+                    tags = vert_info["tag_identifiers"]
+                    j = 1
+                    while j <= al.size(tags):
+                        tag = al.get_element(tags, j)
+                        if not lp.contains(map_tags, tag):
+                            lp.put(map_tags, tag, True)
+                        j += 1
+            i += 1
+        answer["total_individuos"] = lp.size(map_tags)
+
+        children = lp.new_map(2000, 0.5, None)
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                vid = slot["key"]
+                info = slot["value"]
+                parent = info["edge_from"]
+                if info["marked"] is True and parent is not None:
+                    entry = lp.get(children, parent)
+                    if entry is None:
+                        lista_hijos = al.new_list()
+                        lp.put(children, parent, lista_hijos)
+                    else:
+                        lista_hijos = entry["value"]
+                    al.add_last(lista_hijos, vid)
+            i += 1
+
+        ruta = al.new_list()
+        q = queue.new_queue()
+        vistos = lp.new_map(2000, 0.5, None)
+        queue.enqueue(q, key)
+        lp.put(vistos, key, True)
+
+        while not queue.is_empty(q):
+            v = queue.dequeue(q)
+            al.add_last(ruta, v)
+            entry = lp.get(children, v)
+            if entry is not None:
+                hijos = entry["value"]
+                j = 1
+                while j <= al.size(hijos):
+                    w = al.get_element(hijos, j)
+                    if not lp.contains(vistos, w):
+                        lp.put(vistos, w, True)
+                        queue.enqueue(q, w)
+                    j += 1
+
+        n = al.size(ruta)
+        if n == 0:
+            answer["primeros_5"] = al.new_list()
+            answer["ultimos_5"] = al.new_list()
+            return answer
+
+        k = 5 if n >= 5 else n
+
+        lista_info = al.new_list()
+        j = 1
+        while j <= n:
+            vid = al.get_element(ruta, j)
+            vert_info = dg.get_vertex(graph, vid)["value"]
+            tags = vert_info["tag_identifiers"]
+            num_tags = al.size(tags)
+
+            if num_tags == 0:
+                first_tags = "Unknown"
+                last_tags = "Unknown"
+            else:
+                fcount = 3 if num_tags >= 3 else num_tags
+                first_tags = al.sub_list(tags, 1, fcount)
+
+                lcount = 3 if num_tags >= 3 else num_tags
+                start_last = num_tags - lcount + 1
+                last_tags = al.sub_list(tags, start_last, lcount)
+
+            info_node = {
+                "id": vid,
+                "lon": vert_info["lon"],
+                "lat": vert_info["lat"],
+                "num_pajaros": num_tags,
+                "first_tags": first_tags,
+                "last_tags": last_tags
+            }
+            al.add_last(lista_info, info_node)
+            j += 1
+
+        primeros = al.sub_list(lista_info, 1, k)
+        ultimos = al.sub_list(lista_info, n - k + 1, k)
+
+        answer["primeros_5"] = primeros
+        answer["ultimos_5"] = ultimos
     # TODO: Modificar el requerimiento 4
     pass
 
