@@ -1,30 +1,20 @@
 from DataStructures.Map import map_linear_probing as map
 from DataStructures.Priority_queue import priority_queue as pq
-from DataStructures.Queue import queue as q
 
 
-def new_prim_structure(source, g_order):
+
+def new_prim_structure(source, order):
     """
-    Crea una estructura de busqueda usada en el algoritmo **prim**.
-
-    Se crea una estructura de busqueda con los siguientes atributos:
-
-    - **source**: Vertice de inicio del MST.
-    - **edge_from**: Mapa con los vertices visitados. Se inicializa en ``None``
-    - **dist_to**: Mapa con las distancias a los vertices. Se inicializa en ``None``
-    - **marked**: Mapa con los vertices visitados. Se inicializa en ``None``
-    - **pq**: Cola de prioridad indexada (index_priority_queue). Se inicializa en ``None``
-
-    :returns: Estructura de busqueda
-    :rtype: prim_search
+    Definición de la estructura utilizada para construcción del MST (Algoritmo Prim Eager)
+    a partir del vértice source
     """
 
-    structure = {
-        "source": source,
-        "edge_from": map.new_map(g_order, 0.5),
-        "dist_to": map.new_map(g_order, 0.5),
-        "marked": map.new_map(g_order, 0.5),
-        "pq":  pq.new_heap(),
-    }
-
-    return structure
+    prim_structure = {
+    'source': source, # identificador del vertice inicio del MST
+    'visited': map.new_map(order, 0.5,None), # tabla de hash con la información para cada vértice v del MST:
+                                    # su estado de marcación ('marked'),
+                                    # el costo o distancia del arco escogido para llegar al vértice del MST ('dist_to'),
+                                    # el vertice que define al arco para llegar al vertice del MST ('edge_from')
+    'pq': pq.new_heap(is_min= False), # cola de prioridad orientada a menor donde se guarda cada vértice con su arco de menor costo
+}
+    return prim_structure

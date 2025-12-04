@@ -9,7 +9,10 @@ from DataStructures.Graph import vertex as vt
 from DataStructures.Graph import dfs
 from DataStructures.Graph import dfo 
 from DataStructures.Graph import bfs as bfs
+from DataStructures.Graph import prim as pm 
 from DataStructures.Stack import stack as st
+from DataStructures.Queue import queue
+from DataStructures.Stack import stack
 from math import radians, cos, sin, asin, sqrt
 
 data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/Challenge-4'
@@ -412,7 +415,6 @@ def req_2(catalog, gps_origen, gps_destino, radio):
     }
     # TODO: Modificar el requerimiento 2
     
-
 def req_3(catalog):
     """
     Retorna el resultado del requerimiento 3
@@ -426,28 +428,176 @@ def req_3(catalog):
     if centinela:
         post_reversed = dfo.dfo(nicho_biologico)
         post_reversed = post_reversed["reversepost"]
-        array = al.new_list
         first = al.new_list()
-        last = al.new_list()
+        vertices = st.size(post_reversed)
         pajaros= 0
-        while st.is_empty(post_reversed):
+        while not st.is_empty(post_reversed):
             vertex = dg.get_vertex(nicho_biologico,st.pop(post_reversed))["value"]
             dict_clean = {
-                "id": 
+                "id": vertex["id"],
+                "lon": vertex["lon"],
+                "lan": vertex["lan"],
+                "pajaros" : al.size(vertex["tag_identifiers"]),
+                "first": al.sub_list(vertex["tag_identifiers"],0,2),
+                "last": al.sub_list(vertex["tag_identifiers"],al.size(vertex["tag_identifiers"])-3, 3),
+                "adyacentes":dg.edges_vertex(nicho_biologico,st.pop(post_reversed))
             }
-            
-            
-
+            pajaros += al.size(vertex["tag_identifiers"])
+            al.add_last(first,dict_clean)
+        answer["vertices"] = vertices
+        answer["pajaros"] = pajaros
+        answer["fisrt"] = al.sub_list(first,0,4)
+        answer["last"] = al.sub_list(first,al.size(first)-5,5)
+        return answer
     else:
         return ("Se presentaron ciclos dentro del grafo a realizar dfo")
     # TODO: Modificar el requerimiento 3
     pass
 
-
-def req_4(catalog):
+def req_4(catalog,lon,lat):
     """
     Retorna el resultado del requerimiento 4
     """
+    answer ={
+        "total_vertice": 0,
+        "total_individuos": 0,
+        "distancia_total": 0,
+        
+    }
+    graph = catalog["graph_water"]
+    min = 999999999
+    key = 0
+    vertices= dg.vertices(graph)
+    for i in vertices["elements"]:
+        vertex = dg.get_vertex(graph,i)
+        lon_x = vertex["lon"]
+        lat_x = vertex["lat"]
+        distance = haversine(lon,lat,lon_x,lat_x)
+        if min > distance:
+            min = distance
+            key = i
+    prim = pm.prim_mst(graph,key) 
+    edges = pm.edges_mst(graph, prim)
+
+    if al.size(edges) == 0:
+        return "No se encontró una red hídrica viable desde el origen especificado"
+    else:
+        distancia_total = pm.weight_mst(graph, prim)
+        answer["distancia_total"] = distancia_total
+        visited = prim["visited"]
+        tabla = visited["table"]["elements"]
+        total_vertices = 0
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                info = slot["value"]
+                if info["marked"] is True:
+                    total_vertices += 1
+            i += 1
+        answer["total_vertice"] = total_vertices 
+        map_tags = lp.new_map(2000, 0.5, None)
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                vid = slot["key"]
+                info = slot["value"]
+                if info["marked"] is True:
+                    vert_info = dg.get_vertex(graph, vid)["value"]
+                    tags = vert_info["tag_identifiers"]
+                    j = 1
+                    while j <= al.size(tags):
+                        tag = al.get_element(tags, j)
+                        if not lp.contains(map_tags, tag):
+                            lp.put(map_tags, tag, True)
+                        j += 1
+            i += 1
+        answer["total_individuos"] = lp.size(map_tags)
+
+        children = lp.new_map(2000, 0.5, None)
+        i = 0
+        while i < al.size(tabla):
+            slot = al.get_element(tabla, i)
+            if slot["key"] is not None:
+                vid = slot["key"]
+                info = slot["value"]
+                parent = info["edge_from"]
+                if info["marked"] is True and parent is not None:
+                    entry = lp.get(children, parent)
+                    if entry is None:
+                        lista_hijos = al.new_list()
+                        lp.put(children, parent, lista_hijos)
+                    else:
+                        lista_hijos = entry["value"]
+                    al.add_last(lista_hijos, vid)
+            i += 1
+
+        ruta = al.new_list()
+        q = queue.new_queue()
+        vistos = lp.new_map(2000, 0.5, None)
+        queue.enqueue(q, key)
+        lp.put(vistos, key, True)
+
+        while not queue.is_empty(q):
+            v = queue.dequeue(q)
+            al.add_last(ruta, v)
+            entry = lp.get(children, v)
+            if entry is not None:
+                hijos = entry["value"]
+                j = 1
+                while j <= al.size(hijos):
+                    w = al.get_element(hijos, j)
+                    if not lp.contains(vistos, w):
+                        lp.put(vistos, w, True)
+                        queue.enqueue(q, w)
+                    j += 1
+
+        n = al.size(ruta)
+        if n == 0:
+            answer["primeros_5"] = al.new_list()
+            answer["ultimos_5"] = al.new_list()
+            return answer
+
+        k = 5 if n >= 5 else n
+
+        lista_info = al.new_list()
+        j = 1
+        while j <= n:
+            vid = al.get_element(ruta, j)
+            vert_info = dg.get_vertex(graph, vid)["value"]
+            tags = vert_info["tag_identifiers"]
+            num_tags = al.size(tags)
+
+            if num_tags == 0:
+                first_tags = "Unknown"
+                last_tags = "Unknown"
+            else:
+                fcount = 3 if num_tags >= 3 else num_tags
+                first_tags = al.sub_list(tags, 1, fcount)
+
+                lcount = 3 if num_tags >= 3 else num_tags
+                start_last = num_tags - lcount + 1
+                last_tags = al.sub_list(tags, start_last, lcount)
+
+            info_node = {
+                "id": vid,
+                "lon": vert_info["lon"],
+                "lat": vert_info["lat"],
+                "num_pajaros": num_tags,
+                "first_tags": first_tags,
+                "last_tags": last_tags
+            }
+            al.add_last(lista_info, info_node)
+            j += 1
+
+        primeros = al.sub_list(lista_info, 1, k)
+        ultimos = al.sub_list(lista_info, n - k + 1, k)
+
+        answer["primeros_5"] = primeros
+        answer["ultimos_5"] = ultimos
+
+        return answer
     # TODO: Modificar el requerimiento 4
     pass
 
