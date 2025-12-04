@@ -26,8 +26,8 @@ def new_logic():
     analyzer = {
     "event" : al.new_list(), # La parte de los elementos organizados por el timestap
     "events_by_tags" : lp.new_map(40,0.5,None), #Cada una de las grullas con su nodo de referencia
-    "graph_distance" : dg.new_graph(20),
-    "graph_water":dg.new_graph(20)
+    "graph_distance" : dg.new_graph(10000),
+    "graph_water":dg.new_graph(10000)
     }
     return analyzer
     #TODO: Llama a las funciónes de creación de las estructuras de datos
@@ -68,7 +68,7 @@ def load_data(catalog,):
 # Funciones de consulta sobre el catálogo
 
 def load_grullas(catalog):
-    flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
+    flight_file = data_dir + "/1000_cranes_mongolia_small.csv" 
     input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
     
     for each in input_file:
@@ -80,6 +80,7 @@ def load_grullas(catalog):
             return True
         return False
     al.merge_sort(catalog,default_sort)
+    print(catalog)
     return catalog
 
 def load_graph_distance(catalog):
@@ -91,7 +92,7 @@ def load_graph_distance(catalog):
 
     i = 0
     while i < al.size(lista):
-
+        print (i)
         each = al.get_element(lista, i)
 
         lon = float(each["location-long"])
@@ -127,7 +128,7 @@ def load_graph_distance(catalog):
             lista_vertices = dg.vertices(graph)
             j = 0
             assigned = False
-
+            print(lista_vertices)
             # Intentar asignarlo a un vértice ya existente
             while j < al.size(lista_vertices) and not assigned:
 
@@ -213,6 +214,7 @@ def build_water_vertices(catalog):
     lista_vertices = dg.vertices(graph_dist)
 
     i = 0
+    print(i)
     while i < al.size(lista_vertices):
 
         vid = al.get_element(lista_vertices, i)

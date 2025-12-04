@@ -53,26 +53,26 @@ def degree(my_graph, key_u):
 
 def adjacents(my_graph, key_u):
     lista = al.new_list()
-    key = lp.get(my_graph["vertices"], key_u)
-    if key is None:
+    vertex_u = lp.get(my_graph["vertices"], key_u)
+    if vertex_u is None:
         return lista
-    else:
-        adjacent = vt.get_adjacents(key)
-        table = adjacent["table"]["elements"]
-        for each in table:
-            al.add_last(each["key"])
-        return lista
+
+    adj_map = vt.get_adjacents(vertex_u)
+    table = adj_map["table"]["elements"]
+    for entry in table:
+        if entry is not None and entry["key"] is not None:
+            al.add_last(lista, entry["key"])
+    return lista
 
 def vertices(my_graph):
     lista = al.new_list()
     table = my_graph["vertices"]["table"]["elements"]
-    for each in table:
-        if each["key"] is not None:
-            al.add_last(lista, each["key"])
+    for entry in table:
+        if entry is not None and entry["key"] is not None:
+            al.add_last(lista, entry["key"])
     return lista
 
-def edges_vertex(my_graph, key_u):  
-    
+def edges_vertex(my_graph, key_u):
     if not contains_vertex(my_graph, key_u):
         raise Exception("El vertice u no existe")
     
@@ -81,9 +81,11 @@ def edges_vertex(my_graph, key_u):
     lista = al.new_list()
     table = adj_map["table"]["elements"]
     for entry in table:
-        if entry is not None:
-            if entry["key"] is not None:
-                al.add_last(lista,(key_u,entry["key"],entry["weight"]))  
+        if entry is not None and entry["key"] is not None:
+            edge = entry["value"]   # objeto arco
+            weight = edge["weight"]
+            v = entry["key"]
+            al.add_last(lista, (key_u, v, weight))
     return lista
 
 def get_vertex(my_graph, key_u):
@@ -95,12 +97,11 @@ def get_vertex(my_graph, key_u):
         return vertex
 
 def update_vertex_info(my_graph, key_u, new_info_u):
-    
     vertex = get_vertex(my_graph, key_u)
     if vertex is None:
         return my_graph
     
-    vertex["value"]["value"] = new_info_u
+    vertex["value"] = new_info_u
     lp.put(my_graph["vertices"], key_u, vertex)
     return my_graph
 

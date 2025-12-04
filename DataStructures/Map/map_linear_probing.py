@@ -1,155 +1,105 @@
-from DataStructures.Map import map_functions as mp
-from DataStructures.Map import map_entry as me
 from DataStructures.List import array_list as al
-import random
 import math
 
-def new_map(num_elements,load_factor,prime):
-    if prime == None:
-        prime = 109345121
+TOMBSTONE = "__EMPTY__"
+
+def new_map(num_elements, load_factor, prime):
     if load_factor <= 0:
-        return ("ValueError. load_factor debe ser > 0")
-    
-    capacity = int(math.ceil(num_elements/load_factor))
-    capacity = mp.next_prime(capacity)
-    
-    scale = random.randint(1,prime-1)
-    shift = random.randint(0,prime-1) 
+        raise ValueError("load_factor debe ser > 0")
+    capacity = max(11, int(math.ceil(num_elements / load_factor)))
     table = al.new_list()
-    for i in range(capacity):
-        al.add_last(table,{"key":None,"value":None})
-        
-    map = {
-        "prime": prime,
+    for _ in range(capacity):
+        al.add_last(table, {"key": None, "value": None})
+    my_map = {
         "capacity": capacity,
-        "scale": scale,
-        "shift": shift,
         "table": table,
-        "current_factor": 0,
-        "limit_factor": load_factor,
         "size": 0,
+        "limit_factor": load_factor,
+        "current_factor": 0
     }
-    return map
+    return my_map
 
-def is_available(table, pos):
+def hash_value(my_map, key):
+    return abs(hash(key)) % my_map["capacity"]
 
-    entry = al.get_element(table, pos)
-    if me.get_key(entry) is None or me.get_key(entry) == "__EMPTY__":
-        return True
-    return False
-
-def default_compare(key, entry):
-
-    if key == me.get_key(entry):
-        return 0
-    elif key > me.get_key(entry):
-        return 1
-    return -1
-
-def find_slot(my_map, key, hash_value):
+def find_slot(my_map, key, index):
+    table = my_map["table"]["elements"]
+    capacity = my_map["capacity"]
     first_avail = None
-    found = False
-    ocupied = False
-    while not found:
-        if is_available(my_map["table"], hash_value):
+    while True:
+        entry = table[index]
+        if entry["key"] is None:
             if first_avail is None:
-                first_avail = hash_value
-            entry = al.get_element(my_map["table"], hash_value)
-            if me.get_key(entry) is None:
-                found = True
-        elif default_compare(key, al.get_element(my_map["table"], hash_value)) == 0:
-            first_avail = hash_value
-            found = True
-            ocupied = True
-    hash_value = (hash_value + 1) % my_map["capacity"]
-    return ocupied, first_avail
+                first_avail = index
+            return False, first_avail
+        if entry["key"] == TOMBSTONE:
+            if first_avail is None:
+                first_avail = index
+        if entry["key"] == key:
+            return True, index
+        index = (index + 1) % capacity
 
 def rehash(my_map):
-    capacity = (my_map["capacity"] * 2)
-    capacity = int(math.ceil(capacity))
-    capacity = mp.next_prime(capacity)
-    
+    old_table = my_map["table"]["elements"]
+    old_capacity = my_map["capacity"]
+    new_capacity = old_capacity * 2
     table = al.new_list()
-    for i in range(capacity):
-        al.add_last(table,{"key":None,"value":None})
-        
-    old_table = my_map["table"]
-    old_table = old_table["elements"]
-    my_map["capacity"] = capacity
-    my_map["size"] = 0
-    my_map["current_factor"] = 0
+    for _ in range(new_capacity):
+        al.add_last(table, {"key": None, "value": None})
     my_map["table"] = table
-    for i in old_table:
-        if i["key"] is not None and i["value"] is not None:
-            put(my_map,i["key"],i["value"])
+    my_map["capacity"] = new_capacity
+    my_map["size"] = 0
+    for entry in old_table:
+        if entry["key"] is not None and entry["key"] != TOMBSTONE:
+            put(my_map, entry["key"], entry["value"])
+    my_map["current_factor"] = my_map["size"] / my_map["capacity"]
     return my_map
 
-def put(my_map,key,value):
-    hash = mp.hash_value(my_map,key)
-    position = find_slot(my_map,key,hash)
-    if position[0] == True:
-        my_map["table"]["elements"][position[1]]["value"] = value
-    else:
-        my_map["table"]["elements"][position[1]]= {"key": key, "value": value}
-        my_map["size"] +=1
-        my_map["current_factor"] = my_map["size"]/my_map["capacity"]
-        if my_map["current_factor"] > my_map["limit_factor"]:
-            rehash(my_map)
-    
+def put(my_map, key, value):
+    idx = hash_value(my_map, key)
+    found, pos = find_slot(my_map, key, idx)
+    if found:
+        my_map["table"]["elements"][pos]["value"] = value
+        return my_map
+    my_map["table"]["elements"][pos] = {"key": key, "value": value}
+    my_map["size"] += 1
+    my_map["current_factor"] = my_map["size"] / my_map["capacity"]
+    if my_map["current_factor"] > my_map["limit_factor"]:
+        rehash(my_map)
     return my_map
 
-def contains(my_map, key):
-    hash_index = mp.hash_value(my_map, key)
-    slot = find_slot(my_map, key, hash_index)
-    
-    if slot["key"] is None:
-        return False
-    if slot["key"] == key:
-        return True
-    else:
-        return False
-    
 def get(my_map, key):
-    hash_index = mp.hash_value(my_map, key)
-    ocupied, slot = find_slot(my_map, key, hash_index)
-    entry = my_map["table"]["elements"][slot]
-    if entry["key"] is None:
+    idx = hash_value(my_map, key)
+    found, pos = find_slot(my_map, key, idx)
+    if not found:
         return None
+    entry = my_map["table"]["elements"][pos]
     if entry["key"] == key:
         return entry["value"]
-    else:
-        return None
+    return None
 
-def size(my_map):
-    return my_map["size"]
-
+def contains(my_map, key):
+    return get(my_map, key) is not None
 
 def remove(my_map, key):
-    
-    hash_index = mp.hash_value(my_map, key)
-    ocupada, slot = find_slot(my_map, key, hash_index)
-    if ocupada:
-        
-        al.get_element(my_map["table"], slot)["key"] = "_EMPTY_"
-        al.get_element(my_map["table"], slot)["value"] = None
-        
-        
-        my_map["size"] -= 1
-        my_map["current_factor"] = my_map["size"] / my_map["capacity"]
-        return True
-    return False
-
-def is_empty(my_map):
-    if my_map["size"] == 0:
-        return True
-    else:
+    idx = hash_value(my_map, key)
+    found, pos = find_slot(my_map, key, idx)
+    if not found:
         return False
-    
+    entry = my_map["table"]["elements"][pos]
+    if entry["key"] != key:
+        return False
+    entry["key"] = TOMBSTONE
+    entry["value"] = None
+    my_map["size"] -= 1
+    my_map["current_factor"] = my_map["size"] / my_map["capacity"]
+    return True
+
 def key_set(my_map):
     lista = al.new_list()
     table = my_map["table"]["elements"]
     for slot in table:
-        if slot["key"] is not None:
+        if slot["key"] is not None and slot["key"] != TOMBSTONE:
             al.add_last(lista, slot["key"])
     return lista
 
@@ -157,6 +107,12 @@ def value_set(my_map):
     lista = al.new_list()
     table = my_map["table"]["elements"]
     for slot in table:
-        if slot["key"] is not None:
+        if slot["key"] is not None and slot["key"] != TOMBSTONE:
             al.add_last(lista, slot["value"])
     return lista
+
+def size(my_map):
+    return my_map["size"]
+
+def is_empty(my_map):
+    return my_map["size"] == 0
