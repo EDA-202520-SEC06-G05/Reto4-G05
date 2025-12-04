@@ -917,6 +917,29 @@ def req_4(catalog,lon,lat):
     """
     Retorna el resultado del requerimiento 4
     """
+    answer ={
+        "total_vertice": 0,
+        "total_individuos": 0,
+        "distancia_total": 0,
+        
+    }
+    graph = catalog["graph_water"]
+    min = 999999999
+    key = 0
+    vertices= dg.vertices(graph)
+    for i in vertices["elements"]:
+        vertex = dg.get_vertex(graph,i)
+        lon_x = vertex["lon"]
+        lat_x = vertex["lat"]
+        distance = haversine(lon,lat,lon_x,lat_x)
+        if min > distance:
+            min = distance
+            key = i
+    prim = pm.prim_mst(graph,key) 
+    edges = pm.edges_mst(graph, prim)
+
+    if al.size(edges) == 0:
+        return "No se encontró una red hídrica viable desde el origen especificado"
     # TODO: Modificar el requerimiento 4
     pass
 
