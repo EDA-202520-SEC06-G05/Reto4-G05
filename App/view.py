@@ -2,6 +2,8 @@ import sys
 import tabulate
 from App import logic as lg
 from DataStructures.List import array_list as al
+
+
 def new_logic():
     """
         Se crea una instancia del controlador
@@ -475,80 +477,6 @@ def print_req_6(control):
     """
         Función que imprime la solución del Requerimiento 6 en consola
     """
-    answer = lg.req_3(control)
-    print("\n=== RESULTADO REQ 3 ===")
-    resumen = [
-    ["El total de subredes hídricas identificadas en el nicho biológico", f"{answer['time']}"],
-]
-    print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
-
-    first = []
-    for i in range(answer["first"]["size"]):
-        flight = al.get_element(answer["first"], i)
-        first.append([
-        flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
-    ])
-
-    titulo_first = f"Primeros {len(first)} nodos encontrados"
-    print(f"\n============ {titulo_first} ============")
-    print(
-        tabulate(
-        first,
-        headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
-        ],
-        tablefmt="grid",
-        showindex=range(1, len(first) + 1)
-    )
-)
-
-    last = []
-    for i in range(answer["last"]["size"]):
-        flight = al.get_element(answer["last"], i)
-        last.append([
-        flight["id"],
-        flight["flight"],
-        flight["date"],
-        flight["airline_name"],
-        flight["airline_code"],
-        flight["origin"],
-        flight["dest"],
-        flight["distance"],
-    ])
-
-    titulo_last = f"Últimos {len(last)} nodos encontrados"
-    print(f"\n============ {titulo_last} ============")
-    print(
-    tabulate(
-        last,
-        headers=[
-            "ID vuelo",
-            "Código vuelo",
-            "Fecha",
-            "Aerolínea",
-            "Carrier",
-            "Origen",
-            "Destino",
-            "Distancia (mi)",
-        ],
-        tablefmt="grid",
-        showindex=range(1, len(last) + 1)
-    )
-)
     # TODO: Imprimir el resultado del requerimiento 6
     pass
 
