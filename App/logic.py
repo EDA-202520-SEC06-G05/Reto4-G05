@@ -448,13 +448,14 @@ def resumen_carga_distance(catalog):
 
     tags_unicos = lp.new_map(2000, 0.7, None)
 
-    i = 0
     eventos = catalog["event"]
+    i = 0
     while i < al.size(eventos):
         ev = al.get_element(eventos, i)
         tag = ev["tag-local-identifier"]
 
-        if lp.get(tags_unicos, tag) is None:
+        existe_tag = lp.get(tags_unicos, tag)
+        if existe_tag is None:
             lp.put(tags_unicos, tag, True)
 
         i += 1
@@ -462,15 +463,15 @@ def resumen_carga_distance(catalog):
     total_grullas = tags_unicos["size"]
 
     total_nodos = dg.order(grafo)
-
-    total_arcos = dg.num_edges(grafo)
+    total_arcos = dg.size(grafo)
 
     vertices = dg.vertices(grafo)
+
     primeros5 = al.new_list()
-    ultimos5 = al.new_list()
 
     i = 0
     while i < 5 and i < al.size(vertices):
+
         vid = al.get_element(vertices, i)
         v = dg.get_vertex(grafo, vid)
         info = v["value"]
@@ -483,14 +484,23 @@ def resumen_carga_distance(catalog):
             "tags": info["tag_identifiers"],
             "eventos": info["events_count"]
         }
+
         al.add_last(primeros5, nodo_info)
         i += 1
 
-    total = al.size(vertices)
-    start = total - 5 if total > 5 else 0
+    ultimos5 = al.new_list()
+    total_vertices = al.size(vertices)
+
+    hay_mas_de_5 = total_vertices > 5
+
+    if hay_mas_de_5:
+        start = total_vertices - 5
+    else:
+        start = 0
 
     j = start
-    while j < total:
+    while j < total_vertices:
+
         vid = al.get_element(vertices, j)
         v = dg.get_vertex(grafo, vid)
         info = v["value"]
@@ -503,6 +513,7 @@ def resumen_carga_distance(catalog):
             "tags": info["tag_identifiers"],
             "eventos": info["events_count"]
         }
+
         al.add_last(ultimos5, nodo_info)
         j += 1
 
@@ -522,13 +533,15 @@ def resumen_carga_water(catalog):
 
     tags_unicos = lp.new_map(2000, 0.7, None)
 
-    i = 0
     eventos = catalog["event"]
+    i = 0
     while i < al.size(eventos):
+
         ev = al.get_element(eventos, i)
         tag = ev["tag-local-identifier"]
 
-        if lp.get(tags_unicos, tag) is None:
+        existe = lp.get(tags_unicos, tag)
+        if existe is None:
             lp.put(tags_unicos, tag, True)
 
         i += 1
@@ -536,20 +549,20 @@ def resumen_carga_water(catalog):
     total_grullas = tags_unicos["size"]
 
     total_nodos = dg.order(grafo)
-    
-    total_arcos = dg.num_edges(grafo)
+    total_arcos = dg.size(grafo)
 
     vertices = dg.vertices(grafo)
+
     primeros5 = al.new_list()
-    ultimos5 = al.new_list()
 
     i = 0
     while i < 5 and i < al.size(vertices):
+
         vid = al.get_element(vertices, i)
         v = dg.get_vertex(grafo, vid)
         info = v["value"]
 
-        nodo = {
+        nodo_info = {
             "id": vid,
             "lat": info["lat"],
             "lon": info["lon"],
@@ -557,19 +570,28 @@ def resumen_carga_water(catalog):
             "tags": info["tag_identifiers"],
             "eventos": info["events_count"]
         }
-        al.add_last(primeros5, nodo)
-        i += 1
 
-    total = al.size(vertices)
-    start = total - 5 if total > 5 else 0
+        al.add_last(primeros5, nodo_info)
+        i += 1
+        
+    ultimos5 = al.new_list()
+    total_vertices = al.size(vertices)
+
+    hay_mas_de_5 = total_vertices > 5
+
+    if hay_mas_de_5:
+        start = total_vertices - 5
+    else:
+        start = 0
 
     j = start
-    while j < total:
+    while j < total_vertices:
+
         vid = al.get_element(vertices, j)
         v = dg.get_vertex(grafo, vid)
         info = v["value"]
 
-        nodo = {
+        nodo_info = {
             "id": vid,
             "lat": info["lat"],
             "lon": info["lon"],
@@ -577,9 +599,10 @@ def resumen_carga_water(catalog):
             "tags": info["tag_identifiers"],
             "eventos": info["events_count"]
         }
-        al.add_last(ultimos5, nodo)
+
+        al.add_last(ultimos5, nodo_info)
         j += 1
-        
+
     return {
         "total_grullas": total_grullas,
         "total_eventos": total_eventos,
@@ -589,12 +612,158 @@ def resumen_carga_water(catalog):
         "ultimos5": ultimos5
     }
     
-def req_1(catalog):
-    """
-    Retorna el resultado del requerimiento 1
-    """
-    # TODO: Modificar el requerimiento 1
-    pass
+def req_1(catalog,gps_origen,gps_destino,tag_id):
+    grafo=catalog["graph_distance"]
+    verts=dg.vertices(grafo)
+    lat_o=gps_origen[0]
+    lon_o=gps_origen[1]
+    lat_d=gps_destino[0]
+    lon_d=gps_destino[1]
+    nodo_o=None
+    nodo_d=None
+    best_o=999999999
+    best_d=999999999
+    i=0
+    while i<verts["size"]:
+        vid=al.get_element(verts,i)
+        vert=dg.get_vertex(grafo,vid)
+        info=vert["value"]
+        lat=info.get("lat","Desconocido")
+        lon=info.get("lon","Desconocido")
+        if lat!="Desconocido" and lon!="Desconocido":
+            dist_o=haversine(lon_o,lat_o,lon,lat)
+            if dist_o<best_o:
+                best_o=dist_o
+                nodo_o=vid
+            dist_d=haversine(lon_d,lat_d,lon,lat)
+            if dist_d<best_d:
+                best_d=dist_d
+                nodo_d=vid
+        i+=1
+    if nodo_o is None or nodo_d is None:
+        return {"mensaje":"No se pudo determinar origen o destino."}
+    visit=dfs.dfs(grafo,nodo_o)
+    if not dfs.has_path_to(nodo_d,visit):
+        return {"mensaje":"No existe un camino viable.","ruta":None}
+    path=dfs.path_to(nodo_d,visit)
+    temp=st.new_stack()
+    while not st.is_empty(path):
+        st.push(temp,st.pop(path))
+    path=temp
+    ruta=al.new_list()
+    temp2=st.new_stack()
+    while not st.is_empty(path):
+        v=st.pop(path)
+        st.push(temp2,v)
+        al.add_last(ruta,v)
+    path=temp2
+    total=ruta["size"]
+    primer="Desconocido"
+    total_dist=0
+    prev=None
+    j=0
+    while j<total:
+        nid=al.get_element(ruta,j)
+        vert=dg.get_vertex(grafo,nid)
+        info=vert["value"]
+        tags=info.get("tag_identifiers")
+        if primer=="Desconocido" and tags is not None:
+            k=0
+            while k<tags["size"]:
+                if al.get_element(tags,k)==tag_id:
+                    primer=nid
+                k+=1
+        if prev is not None:
+            vprev=dg.get_vertex(grafo,prev)
+            edge=vt.get_edge(vprev,nid)
+            if edge is not None:
+                total_dist+=edge.get("weight",0)
+        prev=nid
+        j+=1
+    detalle=al.new_list()
+    x=0
+    while x<5 and x<total:
+        nid=al.get_element(ruta,x)
+        vert=dg.get_vertex(grafo,nid)
+        info=vert["value"]
+        name=info.get("name",nid)
+        lat=info.get("lat","Desconocido")
+        lon=info.get("lon","Desconocido")
+        tags=info.get("tag_identifiers")
+        num=tags["size"] if tags is not None else 0
+        p3=al.new_list()
+        u3=al.new_list()
+        a=0
+        while tags is not None and a<3 and a<num:
+            al.add_last(p3,al.get_element(tags,a))
+            a+=1
+        b=num-3
+        if b<0:b=0
+        while tags is not None and b<num:
+            al.add_last(u3,al.get_element(tags,b))
+            b+=1
+        dist_sig="Desconocido"
+        if x+1<total:
+            sig=al.get_element(ruta,x+1)
+            edge=vt.get_edge(vert,sig)
+            if edge is not None:
+                dist_sig=edge.get("weight","Desconocido")
+        al.add_last(detalle,{
+            "nombre":name,
+            "lat":lat,
+            "lon":lon,
+            "n_individuos":num,
+            "primeros_3":p3,
+            "ultimos_3":u3,
+            "dist_sig":dist_sig
+        })
+        x+=1
+    ini=total-5
+    if ini<0:ini=0
+    while ini<total:
+        nid=al.get_element(ruta,ini)
+        vert=dg.get_vertex(grafo,nid)
+        info=vert["value"]
+        name=info.get("name",nid)
+        lat=info.get("lat","Desconocido")
+        lon=info.get("lon","Desconocido")
+        tags=info.get("tag_identifiers")
+        num=tags["size"] if tags is not None else 0
+        p3=al.new_list()
+        u3=al.new_list()
+        a=0
+        while tags is not None and a<3 and a<num:
+            al.add_last(p3,al.get_element(tags,a))
+            a+=1
+        b=num-3
+        if b<0:b=0
+        while tags is not None and b<num:
+            al.add_last(u3,al.get_element(tags,b))
+            b+=1
+        dist_sig="Desconocido"
+        if ini+1<total:
+            sig=al.get_element(ruta,ini+1)
+            edge=vt.get_edge(vert,sig)
+            if edge is not None:
+                dist_sig=edge.get("weight","Desconocido")
+        al.add_last(detalle,{
+            "nombre":name,
+            "lat":lat,
+            "lon":lon,
+            "n_individuos":num,
+            "primeros_3":p3,
+            "ultimos_3":u3,
+            "dist_sig":dist_sig
+        })
+        ini+=1
+    return {
+        "mensaje":"Primer nodo donde aparece la grulla: "+str(primer),
+        "primer_nodo":primer,
+        "distancia_total":total_dist,
+        "total_puntos":total,
+        "detalle":detalle,
+        "ruta":ruta
+    }
 
 
 def req_2(catalog, gps_origen, gps_destino, radio):
@@ -634,7 +803,7 @@ def req_2(catalog, gps_origen, gps_destino, radio):
 
         i += 1
 
-    # Si algo salió mal
+
     if nodoA is None or nodoB is None:
         return {"mensaje": "No se pudieron identificar puntos migratorios."}
 
@@ -915,17 +1084,19 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
         vid = al.get_element(vertexs, i)
         v = dg.get_vertex(grafo, vid)
         info = v["value"]
+        
+        latv = info["lat"]
+        lonv = info["lon"]
+        
+        dA = haversine(lon_origen, lat_origen, lonv, latv)
+        dB = haversine(lon_destino, lat_destino, lonv, latv)
 
-        if "lat" in info and "lon" in info:
-            dA = haversine(lon_origen, lat_origen, info["lon"], info["lat"])
-            dB = haversine(lon_destino, lat_destino, info["lon"], info["lat"])
-
-            if dA < bestA:
-                bestA = dA
-                nodoA = vid
-            if dB < bestB:
-                bestB = dB
-                nodoB = vid
+        if dA < bestA:
+            bestA = dA
+            nodoA = vid
+        if dB < bestB:
+            bestB = dB
+            nodoB = vid
 
         i += 1
 
@@ -968,13 +1139,21 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
         v = dg.get_vertex(grafo, nid)
         info = v["value"]
 
+        lat_ok = lp.get(info, "lat")
+        if lat_ok is not None:
+            lat = lat_ok
+        else:
+            lat = "Unknown"
         
-        lat = info["lat"] if "lat" in info else "Unknown"
-        lon = info["lon"] if "lon" in info else "Unknown"
-
-         
-        if "tag_identifiers" in info:
-            tags = info["tag_identifiers"]
+        lon_ok = lp.get(info, "lon")
+        if lon_ok is not None:
+            lon = lon_ok
+        else:
+            lon = "Unknown"
+        
+        tags_ok = lp.get(info, "tag_identifiers")
+        if tags_ok is not None:
+            tags = tags_ok
         else:
             tags = al.new_list()
 
@@ -997,11 +1176,12 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
             al.add_last(last3, al.get_element(tags, j))
             j += 1
 
-         
-        if "events_count" in info:
-            events_num = info["events_count"]
+        events_ok = lp.get(info, "events_count")
+        if events_ok is not None:
+            event_num = events_ok
         else:
-            events_num = "Unknown"
+            event_num = "Unknown"
+             
 
         detalle = {
             "id": nid,
@@ -1010,7 +1190,7 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
             "num_grullas": tsize,
             "first3": first3,
             "last3": last3,
-            "events": events_num,
+            "events": event_num,
             "dnext": "Unknown"
         }
 
