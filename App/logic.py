@@ -31,7 +31,7 @@ def new_logic():
     }
     return analyzer
     #TODO: Llama a las funciónes de creación de las estructuras de datos
-    
+
 # Funciones para la carga de datos
 def haversine(lon1, lat1, lon2, lat2):
 
@@ -526,7 +526,7 @@ def resumen_carga_distance(catalog):
         "primeros5": primeros5,
         "ultimos5": ultimos5
     }
-    
+
 def resumen_carga_water(catalog):
     grafo = catalog["graph_water"]
 
@@ -612,158 +612,183 @@ def resumen_carga_water(catalog):
         "primeros5": primeros5,
         "ultimos5": ultimos5
     }
-    
+
 def req_1(catalog,gps_origen,gps_destino,tag_id):
     grafo=catalog["graph_distance"]
-    verts=dg.vertices(grafo)
-    lat_o=gps_origen[0]
-    lon_o=gps_origen[1]
-    lat_d=gps_destino[0]
-    lon_d=gps_destino[1]
-    nodo_o=None
-    nodo_d=None
-    best_o=999999999
-    best_d=999999999
+    vertex_list=dg.vertices(grafo)
+    lat_origen,lon_origen=gps_origen
+    lat_dest,lon_dest=gps_destino
+    
+    nodo_o,nodo_d=None,None
+    best_o,best_d=999999999,999999999
+    
+    
     i=0
-    while i<verts["size"]:
-        vid=al.get_element(verts,i)
+    while i<vertex_list["size"]:
+        vid=al.get_element(vertex_list,i)
         vert=dg.get_vertex(grafo,vid)
         info=vert["value"]
-        lat=info.get("lat","Desconocido")
-        lon=info.get("lon","Desconocido")
+        lat=info["lat"] if "lat" in info else "Desconocido"
+        lon=info["lon"] if "lon" in info else "Desconocido"
+        
         if lat!="Desconocido" and lon!="Desconocido":
-            dist_o=haversine(lon_o,lat_o,lon,lat)
+            dist_o=haversine(lon_origen,lat_origen,lon,lat)
+            dist_d=haversine(lon_dest,lat_dest,lon,lat)
+            
             if dist_o<best_o:
                 best_o=dist_o
                 nodo_o=vid
-            dist_d=haversine(lon_d,lat_d,lon,lat)
             if dist_d<best_d:
                 best_d=dist_d
                 nodo_d=vid
         i+=1
+    
     if nodo_o is None or nodo_d is None:
-        return {"mensaje":"No se pudo determinar origen o destino."}
+        return {"mensaje": "No se pudo determinar origen o destino."}
+    
+    
     visit=dfs.dfs(grafo,nodo_o)
     if not dfs.has_path_to(nodo_d,visit):
-        return {"mensaje":"No existe un camino viable.","ruta":None}
+        return {"mensaje": "No existe un camino viable.", "ruta": None}
+    
     path=dfs.path_to(nodo_d,visit)
-    temp=st.new_stack()
+    
+    
+    temp_stack=st.new_stack()
     while not st.is_empty(path):
-        st.push(temp,st.pop(path))
-    path=temp
+        st.push(temp_stack,st.pop(path))
+    path=temp_stack
+    
+    
     ruta=al.new_list()
-    temp2=st.new_stack()
+    temp_stack2=st.new_stack()
     while not st.is_empty(path):
         v=st.pop(path)
-        st.push(temp2,v)
+        st.push(temp_stack2,v)
         al.add_last(ruta,v)
-    path=temp2
-    total=ruta["size"]
+    path=temp_stack2
+    
+    total_points=al.size(ruta)
+    total_distance=0
     primer="Desconocido"
-    total_dist=0
     prev=None
     j=0
-    while j<total:
+    
+    
+    while j<total_points:
         nid=al.get_element(ruta,j)
         vert=dg.get_vertex(grafo,nid)
         info=vert["value"]
-        tags=info.get("tag_identifiers")
+        tags=info["tag_identifiers"] if "tag_identifiers" in info else None
+        
         if primer=="Desconocido" and tags is not None:
             k=0
-            while k<tags["size"]:
+            while k<al.size(tags):
                 if al.get_element(tags,k)==tag_id:
                     primer=nid
+                    break
                 k+=1
+        
         if prev is not None:
-            vprev=dg.get_vertex(grafo,prev)
-            edge=vt.get_edge(vprev,nid)
+            vert_prev=dg.get_vertex(grafo,prev)
+            edge=vt.get_edge(vert_prev,nid)
             if edge is not None:
-                total_dist+=edge.get("weight",0)
+                total_distance+=edge.get("weight",0)
         prev=nid
         j+=1
+    
+    
     detalle=al.new_list()
+    
+    
     x=0
-    while x<5 and x<total:
+    while x<5 and x<total_points:
         nid=al.get_element(ruta,x)
         vert=dg.get_vertex(grafo,nid)
         info=vert["value"]
-        name=info.get("name",nid)
-        lat=info.get("lat","Desconocido")
-        lon=info.get("lon","Desconocido")
-        tags=info.get("tag_identifiers")
-        num=tags["size"] if tags is not None else 0
+        name=info["name"] if "name" in info else nid
+        lat=info["lat"] if "lat" in info else "Desconocido"
+        lon=info["lon"] if "lon" in info else "Desconocido"
+        tags=info["tag_identifiers"] if "tag_identifiers" in info else None
+        num=al.size(tags) if tags is not None else 0
+        
         p3=al.new_list()
         u3=al.new_list()
         a=0
         while tags is not None and a<3 and a<num:
             al.add_last(p3,al.get_element(tags,a))
             a+=1
-        b=num-3
-        if b<0:b=0
+        b=max(0,num-3)
         while tags is not None and b<num:
             al.add_last(u3,al.get_element(tags,b))
             b+=1
+        
         dist_sig="Desconocido"
-        if x+1<total:
+        if x+1<total_points:
             sig=al.get_element(ruta,x+1)
             edge=vt.get_edge(vert,sig)
             if edge is not None:
                 dist_sig=edge.get("weight","Desconocido")
+        
         al.add_last(detalle,{
-            "nombre":name,
-            "lat":lat,
-            "lon":lon,
-            "n_individuos":num,
-            "primeros_3":p3,
-            "ultimos_3":u3,
-            "dist_sig":dist_sig
+            "nombre": name,
+            "lat": lat,
+            "lon": lon,
+            "n_individuos": num,
+            "primeros_3": p3,
+            "ultimos_3": u3,
+            "dist_sig": dist_sig
         })
         x+=1
-    ini=total-5
-    if ini<0:ini=0
-    while ini<total:
+    
+    
+    ini=max(0,total_points-5)
+    while ini<total_points:
         nid=al.get_element(ruta,ini)
         vert=dg.get_vertex(grafo,nid)
         info=vert["value"]
-        name=info.get("name",nid)
-        lat=info.get("lat","Desconocido")
-        lon=info.get("lon","Desconocido")
-        tags=info.get("tag_identifiers")
-        num=tags["size"] if tags is not None else 0
+        name=info["name"] if "name" in info else nid
+        lat=info["lat"] if "lat" in info else "Desconocido"
+        lon=info["lon"] if "lon" in info else "Desconocido"
+        tags=info["tag_identifiers"] if "tag_identifiers" in info else None
+        num=al.size(tags) if tags is not None else 0
+        
         p3=al.new_list()
         u3=al.new_list()
         a=0
         while tags is not None and a<3 and a<num:
             al.add_last(p3,al.get_element(tags,a))
             a+=1
-        b=num-3
-        if b<0:b=0
+        b=max(0,num-3)
         while tags is not None and b<num:
             al.add_last(u3,al.get_element(tags,b))
             b+=1
+        
         dist_sig="Desconocido"
-        if ini+1<total:
+        if ini+1<total_points:
             sig=al.get_element(ruta,ini+1)
             edge=vt.get_edge(vert,sig)
             if edge is not None:
                 dist_sig=edge.get("weight","Desconocido")
+        
         al.add_last(detalle,{
-            "nombre":name,
-            "lat":lat,
-            "lon":lon,
-            "n_individuos":num,
-            "primeros_3":p3,
-            "ultimos_3":u3,
-            "dist_sig":dist_sig
+            "nombre": name,
+            "lat": lat,
+            "lon": lon,
+            "n_individuos": num,
+            "primeros_3": p3,
+            "ultimos_3": u3,
+            "dist_sig": dist_sig
         })
         ini+=1
+    
     return {
-        "mensaje":"Primer nodo donde aparece la grulla: "+str(primer),
-        "primer_nodo":primer,
-        "distancia_total":total_dist,
-        "total_puntos":total,
-        "detalle":detalle,
-        "ruta":ruta
+        "mensaje": f"Primer nodo donde aparece la grulla: {primer}",
+        "primer_nodo": primer,
+        "distancia_total": total_distance,
+        "total_puntos": total_points,
+        "detalle": detalle,
+        "ruta": ruta
     }
 
 
@@ -873,7 +898,7 @@ def req_2(catalog, gps_origen, gps_destino, radio):
     }
     
     # TODO: Modificar el requerimiento 2
-    
+
 
 def req_3(catalog):
     """
@@ -1128,9 +1153,102 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
     }
 
 def req_6(catalog):
-    """
-    Retorna el resultado del requerimiento 6
-    """
+    grafo = catalog["graph_distance"]
+    vertex_list = dg.vertices(grafo)
+    visitados = lp.new_map(al.size(vertex_list), 0.5, None)
+    subredes = al.new_list()
+    subred_id = 1
+
+    i = 0
+    while i < vertex_list["size"]:
+        nid = al.get_element(vertex_list, i)
+        if not lp.contains(visitados, nid):
+            stack = st.new_stack()
+            st.push(stack, nid)
+            al_add = al.new_list()
+            while not st.is_empty(stack):
+                v = st.pop(stack)
+                if not lp.contains(visitados, v):
+                    lp.put(visitados, v, subred_id)
+                    al.add_last(al_add, v)
+                    vert = dg.get_vertex(grafo, v)
+                    ady = dg.adjacents(vert)
+                    j = 0
+                    while j < al.size(ady):
+                        vecino = al.get_element(ady, j)
+                        if not lp.contains(visitados, vecino):
+                            st.push(stack, vecino)
+                        j += 1
+            total_individuos = 0
+            max_lat = -999
+            min_lat = 999
+            max_lon = -999
+            min_lon = 999
+            for idx in range(al.size(al_add)):
+                v = al.get_element(al_add, idx)
+                vert = dg.get_vertex(grafo, v)
+                info = vert["value"]
+                lat = info["lat"] if "lat" in info else "Desconocido"
+                lon = info["lon"] if "lon" in info else "Desconocido"
+                tags = info["tag_identifiers"] if "tag_identifiers" in info else al.new_list()
+                total_individuos += al.size(tags)
+                if lat != "Desconocido":
+                    max_lat = max(max_lat, lat)
+                    min_lat = min(min_lat, lat)
+                if lon != "Desconocido":
+                    max_lon = max(max_lon, lon)
+                    min_lon = min(min_lon, lon)
+            puntos_subred = al.new_list()
+            total_nodos = al.size(al_add)
+            indices = list(range(min(3, total_nodos))) + list(range(max(total_nodos - 3, 0), total_nodos))
+            for idx in indices:
+                v = al.get_element(al_add, idx)
+                vert = dg.get_vertex(grafo, v)
+                info = vert["value"]
+                lat = info["lat"] if "lat" in info else "Desconocido"
+                lon = info["lon"] if "lon" in info else "Desconocido"
+                tags = info["tag_identifiers"] if "tag_identifiers" in info else al.new_list()
+                n_individuos = al.size(tags)
+                primeros3 = al.new_list()
+                ultimos3 = al.new_list()
+                for a in range(min(3, n_individuos)):
+                    al.add_last(primeros3, al.get_element(tags, a))
+                for b in range(max(0, n_individuos - 3), n_individuos):
+                    al.add_last(ultimos3, al.get_element(tags, b))
+                al.add_last(puntos_subred, {
+                    "nid": v,
+                    "lat": lat,
+                    "lon": lon,
+                    "n_individuos": n_individuos,
+                    "primeros_3": primeros3,
+                    "ultimos_3": ultimos3
+                })
+            al.add_last(subredes, {
+                "subred_id": subred_id,
+                "max_lat": max_lat,
+                "min_lat": min_lat,
+                "max_lon": max_lon,
+                "min_lon": min_lon,
+                "total_puntos": al.size(al_add),
+                "puntos": puntos_subred,
+                "total_individuos": total_individuos
+            })
+            subred_id += 1
+        i += 1
+
+    if al.size(subredes) == 0:
+        return {"mensaje": "No se identificaron subredes hídricas", "subredes": None}
+
+    subredes_list = subredes["elements"]
+    subredes_list.sort(key=lambda x: (-x["total_puntos"], x["subred_id"]))
+    top_subredes = al.new_list()
+    for idx in range(min(5, len(subredes_list))):
+        al.add_last(top_subredes, subredes_list[idx])
+
+    return {
+        "total_subredes": al.size(subredes),
+        "top_subredes": top_subredes
+    }
     # TODO: Modificar el requerimiento 6
     pass
 
