@@ -68,7 +68,7 @@ def load_data(catalog,):
 # Funciones de consulta sobre el catálogo
 
 def load_grullas(catalog):
-    flight_file = data_dir + "/1000_cranes_mongolia_small.csv" 
+    flight_file = data_dir + "/1000_cranes_mongolia_large.csv" 
     input_file = csv.DictReader(open(flight_file, encoding="utf-8"), delimiter=",")
     
     for each in input_file:
@@ -80,7 +80,6 @@ def load_grullas(catalog):
             return True
         return False
     al.merge_sort(catalog,default_sort)
-    print(catalog)
     return catalog
 
 def load_graph_distance(catalog):
@@ -92,7 +91,6 @@ def load_graph_distance(catalog):
 
     i = 0
     while i < al.size(lista):
-        print (i)
         each = al.get_element(lista, i)
 
         lon = float(each["location-long"])
@@ -128,7 +126,6 @@ def load_graph_distance(catalog):
             lista_vertices = dg.vertices(graph)
             j = 0
             assigned = False
-            print(lista_vertices)
             # Intentar asignarlo a un vértice ya existente
             while j < al.size(lista_vertices) and not assigned:
 
@@ -203,7 +200,6 @@ def load_graph_distance(catalog):
             info["distance"] = 0
 
         k += 1
-    print(catalog)
     return catalog
 
 def build_water_vertices(catalog):
@@ -214,13 +210,11 @@ def build_water_vertices(catalog):
     lista_vertices = dg.vertices(graph_dist)
 
     i = 0
-    print(i)
     while i < al.size(lista_vertices):
 
         vid = al.get_element(lista_vertices, i)
         vert = dg.get_vertex(graph_dist, vid)
         info = vert["value"]
-        print(info)
         nueva_info = {
             "events": info["events"],
             "lon": info["lon"],
@@ -263,7 +257,7 @@ def construir_arcos_distancia(catalog):
         i += 1
 
     # 2. Procesar cada tag para detectar viajes
-    tabla_grupos = grupos["table"]["elements"]
+    tabla_grupos = grupos["table"]
     g = 0
     while g < al.size(tabla_grupos):
 
@@ -309,7 +303,7 @@ def construir_arcos_distancia(catalog):
         g += 1
 
     # 3. Crear arcos promediando las distancias
-    tabla_trips = trips["table"]["elements"]
+    tabla_trips = trips["table"]
     k = 0
     while k < al.size(tabla_trips):
 
@@ -366,7 +360,7 @@ def construir_arcos_water(catalog):
     # =====================================================
     # 2. Recorrer cada tag y construir transiciones A -> B
     # =====================================================
-    tabla_groups = groups["table"]["elements"]
+    tabla_groups = groups["table"]
     g = 0
     while g < al.size(tabla_groups):
 
@@ -415,7 +409,7 @@ def construir_arcos_water(catalog):
     # =====================================================
     # 3. Promediar transiciones y agregar arcos al grafo
     # =====================================================
-    tabla_trips = trips["table"]["elements"]
+    tabla_trips = trips["table"]
     k = 0
     while k < al.size(tabla_trips):
 
@@ -796,10 +790,10 @@ def req_1(catalog,gps_origen,gps_destino,tag_id):
 
 def req_2(catalog, gps_origen, gps_destino, radio):
 
-    lat_o = gps_origen[0]
-    lon_o = gps_origen[1]
-    lat_d = gps_destino[0]
-    lon_d = gps_destino[1]
+    lat_o = float(gps_origen[0])
+    lon_o = float(gps_origen[1])
+    lat_d = float(gps_destino[0])
+    lon_d = float(gps_destino[1])
 
     grafo = catalog["graph_distance"]
     lista_vertices = dg.vertices(grafo)
@@ -919,18 +913,25 @@ def req_3(catalog):
         vertices = st.size(post_reversed)
         pajaros= 0
         while not st.is_empty(post_reversed):
-            vertex = dg.get_vertex(nicho_biologico,st.pop(post_reversed))["value"]
-            dict_clean = {
-                "id": vertex["id"],
-                "lon": vertex["lon"],
-                "lan": vertex["lan"],
-                "pajaros" : al.size(vertex["tag_identifiers"]),
-                "first": al.sub_list(vertex["tag_identifiers"],0,2),
-                "last": al.sub_list(vertex["tag_identifiers"],al.size(vertex["tag_identifiers"])-3, 3),
-                "adyacentes":dg.edges_vertex(nicho_biologico,st.pop(post_reversed))
+            valor = st.pop(post_reversed)
+            vertex_info = dg.get_vertex(nicho_biologico, valor)
+            if vertex_info is not None:
+                vertex_info = vertex_info["value"]
+                vertex_x = vertex_info["tag_identifiers"]
+                evento = vertex_info["events"]["elements"][0] 
+
+                dict_clean = {
+                "id": evento["event-id"],
+                "lon": evento["location-long"],
+                "lan": evento["location-lat"],
+                "pajaros": al.size(vertex_x),
+                "first": al.sub_list(vertex_x, 1, 2),
+                "last": al.sub_list(vertex_x, al.size(vertex_x) - 2, 3),
+                "adyacentes": dg.edges_vertex(nicho_biologico, valor)
             }
-            pajaros += al.size(vertex["tag_identifiers"])
-            al.add_last(first,dict_clean)
+
+                pajaros += al.size(vertex_x)
+                al.add_last(first, dict_clean)
         answer["vertices"] = vertices
         answer["pajaros"] = pajaros
         answer["fisrt"] = al.sub_list(first,0,4)
@@ -940,10 +941,12 @@ def req_3(catalog):
         return ("Se presentaron ciclos dentro del grafo a realizar dfo")
     # TODO: Modificar el requerimiento 3
 
-def req_4(catalog,lon,lat):
+def req_4(catalog,punto):
     """
     Retorna el resultado del requerimiento 4
     """
+    lon = float(punto[1])
+    lat = float(punto[0])
     answer ={
         "total_vertice": 0,
         "total_individuos": 0,
@@ -991,6 +994,7 @@ def req_4(catalog,lon,lat):
                 info = slot["value"]
                 if info["marked"] is True:
                     vert_info = dg.get_vertex(graph, vid)["value"]
+                    
                     tags = vert_info["tag_identifiers"]
                     j = 1
                     while j <= al.size(tags):
@@ -1089,16 +1093,16 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
     """
     Retorna el resultado del requerimiento 5
     """
-
+    
     if seleccion.upper() == "WATER":
         grafo = catalog["graph_water"]
     else:
         grafo = catalog["graph_distance"]
 
-    lat_origen = pto_origen[0]
-    lon_origen = pto_origen[1]
-    lat_destino = pto_destino[0]
-    lon_destino = pto_destino[1]
+    lat_origen = float(pto_origen[0])
+    lon_origen = float(pto_origen[1])
+    lat_destino = float(pto_destino[0])
+    lon_destino = float(pto_destino[1])
 
     vertexs = dg.vertices(grafo)
     nodoA = None
@@ -1124,7 +1128,8 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
         if dB < bestB:
             bestB = dB
             nodoB = vid
-
+        print (nodoA)
+        print(nodoB)
         i += 1
 
     if nodoA is None or nodoB is None:

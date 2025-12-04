@@ -22,10 +22,10 @@ def dfs_vertex(my_graph, vertice_source, visited_map,centinela):
             vertice = al.get_element(adjacentes_list,i)
             if not lp.contains(visited_map,vertice):
                 lp.put(visited_map,vertice,{"marked":True,"edge_from":vertice_source})
-                dfs_vertex(my_graph,vertice,visited_map)
+                dfs_vertex(my_graph,vertice,visited_map,centinela)
             else:
-                info = lp.get(visited_map, vertice)["value"]
-                if info["visiting"] == True:
+                info = lp.get(visited_map, vertice)
+                if info["marked"] == True:
                     centinela = False
             i+=1
         return visited_map,centinela

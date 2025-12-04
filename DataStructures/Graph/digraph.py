@@ -53,23 +53,31 @@ def degree(my_graph, key_u):
 
 def adjacents(my_graph, key_u):
     lista = al.new_list()
-    vertex_u = lp.get(my_graph["vertices"], key_u)
-    if vertex_u is None:
+    vertex = lp.get(my_graph["vertices"], key_u)
+
+    if vertex is None:
         return lista
 
-    adj_map = vt.get_adjacents(vertex_u)
-    table = adj_map["table"]["elements"]
-    for entry in table:
+    adjacent = vt.get_adjacents(vertex)
+    table = adjacent["table"]["elements"]
+
+    i = 0
+    while i < len(table):
+        entry = table[i]
         if entry is not None and entry["key"] is not None:
             al.add_last(lista, entry["key"])
+        i += 1
+
     return lista
 
 def vertices(my_graph):
     lista = al.new_list()
     table = my_graph["vertices"]["table"]["elements"]
-    for entry in table:
-        if entry is not None and entry["key"] is not None:
-            al.add_last(lista, entry["key"])
+
+    for each in table:
+        if each is not None and each["key"] is not None:
+            al.add_last(lista, each["key"])
+
     return lista
 
 def edges_vertex(my_graph, key_u):

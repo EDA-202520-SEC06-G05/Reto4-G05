@@ -50,9 +50,13 @@ def print_req_1(control):
         Función que imprime la solución del Requerimiento 1 en consola
     """
     puntos_migratorios = input("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
-    puntos_llegada = (input("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    lat = float(input("Latitud: "))
+    lon = float(input("Longitud: "))
+    puntos_llegada = (print("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    lat_x = float(input("Latitud: "))
+    lon_x = float(input("Longitud: "))
     
-    answer = lg.req_1(control,puntos_migratorios,puntos_llegada )
+    answer = lg.req_1(control,[lat,lon],[lat_x,lon_x])
     print("\n=== RESULTADO REQ 1 ===")
 
     resumen = [
@@ -109,9 +113,13 @@ def print_req_2(control):
         Función que imprime la solución del Requerimiento 2 en consola
     """
     puntos_migratorios = input("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
-    puntos_llegada = (input("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    lat = input("Latitud: ")
+    lon = input("Longitud: ")
+    puntos_llegada = (print("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    lat_x = input("Latitud: ")
+    lon_x = input("Longitud: ")
     radio =  int(input("Radio del área de interés en km (desde el punto de origen: "))
-    answer = lg.req_2(control,puntos_migratorios,puntos_llegada,radio)
+    answer = lg.req_2(control,[lat,lon],[lat_x,lon_x],radio)
     print("\n=== RESULTADO REQ 2 ===")
     resumen = [
     ["Mensaje ", f"{answer['mensaje']}"],
@@ -228,8 +236,10 @@ def print_req_4(control):
     """
         Función que imprime la solución del Requerimiento 4 en consola
     """
-    puntos_migratorios = input("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
-    answer = lg.req_4(control,puntos_migratorios)
+    puntos_migratorios = print("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
+    lat = input("Latitud: ")
+    lon = input("Longitud: ") 
+    answer = lg.req_4(control,[lat,lon])
     print("\n=== RESULTADO REQ 4 ===")
 
     resumen = [
@@ -306,10 +316,14 @@ def print_req_5(control):
     """
         Función que imprime la solución del Requerimiento 5 en consola
     """
-    puntos_migratorios = input("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
-    puntos_llegada = (input("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    puntos_migratorios = print("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
+    lat = input("Latitud: ")
+    lon = input("Longitud: ")
+    puntos_llegada = (print("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
+    lat_x = input("Latitud: ")
+    lon_x = input("Longitud: ")
     grafo = input("Selección entre el grafo por distancia de desplazamiento o el grafo por distancias a fuentes hídrica: ")
-    answer = lg.req_4(control,puntos_migratorios,puntos_llegada,grafo)
+    answer = lg.req_5(control,[lat,lon],[lat_x,lon_x],grafo)
     
     print("\n=== RESULTADO REQ 4 ===")
 
