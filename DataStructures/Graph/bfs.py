@@ -5,9 +5,7 @@ from DataStructures.Stack import stack as st
 from DataStructures.Graph import digraph as G
 
 def bfs(my_graph, source):
-    visited= map.new_map(
-        num_elements=G.order(my_graph),
-        load_factor=0.5)
+    visited= map.new_map(num_elements=G.order(my_graph),load_factor=0.5,prime=None)
     map.put(visited,source,{
         "edge_from": None,
         "dist_to": 0})

@@ -1,7 +1,8 @@
 import sys
-import tabulate
+from tabulate import tabulate
 from App import logic as lg
 from DataStructures.List import array_list as al
+from DataStructures.Graph import digraph as dg
 
 
 def new_logic():
@@ -112,39 +113,104 @@ def print_req_2(control):
     """
         Función que imprime la solución del Requerimiento 2 en consola
     """
-    puntos_migratorios = input("Punto migratorio de origen, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud): ")
-    lat = input("Latitud: ")
-    lon = input("Longitud: ")
-    puntos_llegada = (print("Punto migratorio de destino, definido por ser el nodo más cercano a la locación GPS especificada por el usuario (latitud-longitud).: "))
-    lat_x = input("Latitud: ")
-    lon_x = input("Longitud: ")
-    radio =  int(input("Radio del área de interés en km (desde el punto de origen: "))
-    answer = lg.req_2(control,[lat,lon],[lat_x,lon_x],radio)
+    print("Punto migratorio de origen:")
+    lat = float(input("Latitud: "))
+    lon = float(input("Longitud: "))
+
+    print("Punto migratorio de destino:")
+    lat_x = float(input("Latitud: "))
+    lon_x = float(input("Longitud: "))
+
+    radio = int(input("Radio del área de interés en km (desde el punto de origen): "))
+
+    answer = lg.req_2(control, [lat, lon], [lat_x, lon_x], radio)
+
     print("\n=== RESULTADO REQ 2 ===")
+
+    # ================================
+    # TABLA RESUMEN
+    # ================================
     resumen = [
-    ["Mensaje ", f"{answer['mensaje']}"],
-    ["Ultimo nodo encontrado", f"{answer['ultimo_dentro_radio']}"],
-    ["Distancia total", answer["distancia_total"]],],
-    ["Total de puntos", answer["total_puntos"]]
+        ["Mensaje", answer["mensaje"]],
+        ["Último punto dentro del radio", answer["ultimo_dentro_radio"]],
+        ["Distancia total del camino", answer["distancia_total"]],
+        ["Total de puntos en la ruta", answer["total_puntos"]],
+    ]
+
     print(tabulate(resumen, headers=["Descripción", "Valor"], tablefmt="grid"))
 
-    first = []
-    for i in range(answer["ruta"]["size"]):
-        flight = al.get_element(answer["ruta"], i)
-        first.append([flight
-    ])
+    # Si no hay ruta, no seguimos
+    if answer["ruta"] is None:
+        return
 
-    titulo_first = f"Primeros {len(first)} nodos encontrados"
-    print(f"\n============ {titulo_first} ============")
+    # ================================
+    # OBTENER LISTAS DE LOS PRIMEROS Y ÚLTIMOS 5
+    # ================================
+    primeros = answer["primeros5"]
+    ultimos = answer["ultimos5"]
+
+    # ================================
+    # IMPRIMIR PRIMEROS 5
+    # ================================
+    print(f"\n============ Primeros {al.size(primeros)} nodos de la ruta ============\n")
+
+    tabla_primeros = []
+    for i in range(al.size(primeros)):
+        vid = al.get_element(primeros, i)
+        vert = dg.get_vertex(control["graph_distance"], vid)
+        info = vert["value"]
+
+        # No colocamos condicionales dentro del array
+        individuos = info["n_individuos"] if "n_individuos" in info else "Unknown"
+        primeros3 = info["primeros_3"] if "primeros_3" in info else "Unknown"
+        ultimos3 = info["ultimos_3"] if "ultimos_3" in info else "Unknown"
+
+        tabla_primeros.append([
+            vid,
+            info["lat"],
+            info["lon"],
+            individuos,
+            primeros3,
+            ultimos3
+        ])
 
     print(tabulate(
-        first,
-        headers=["Camino"
-        ],
+        tabla_primeros,
+        headers=["Nodo", "Lat", "Lon", "# Individuos", "Primeros 3 tags", "Últimos 3 tags"],
         tablefmt="grid",
-        showindex=range(1, len(first) + 1)
-))
+        showindex=range(1, len(tabla_primeros) + 1)
+    ))
 
+    # ================================
+    # IMPRIMIR ÚLTIMOS 5
+    # ================================
+    print(f"\n============ Últimos {al.size(ultimos)} nodos de la ruta ============\n")
+
+    tabla_ultimos = []
+    for i in range(al.size(ultimos)):
+        vid = al.get_element(ultimos, i)
+        vert = dg.get_vertex(control["graph_distance"], vid)
+        info = vert["value"]
+
+        individuos = info["n_individuos"] if "n_individuos" in info else "Unknown"
+        primeros3 = info["primeros_3"] if "primeros_3" in info else "Unknown"
+        ultimos3 = info["ultimos_3"] if "ultimos_3" in info else "Unknown"
+
+        tabla_ultimos.append([
+            vid,
+            info["lat"],
+            info["lon"],
+            individuos,
+            primeros3,
+            ultimos3
+        ])
+
+    print(tabulate(
+        tabla_ultimos,
+        headers=["Nodo", "Lat", "Lon", "# Individuos", "Primeros 3 tags", "Últimos 3 tags"],
+        tablefmt="grid",
+        showindex=range(1, len(tabla_ultimos) + 1)
+    ))
     # TODO: Imprimir el resultado del requerimiento 2
     pass
 

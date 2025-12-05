@@ -59,7 +59,7 @@ def dijkstra(graph, source):
                     if new_distance < vertice["dist_to"]:
                         vertice["dist_to"] = new_distance
                         vertice["edge_from"] = key_priority
-                        lp.put(structure["visited"], vertice,sub)
+                        lp.put(structure["visited"], sub,vertice)
                         pq.insert(structure["pq"], new_distance,sub)
                 i += 1
         return structure

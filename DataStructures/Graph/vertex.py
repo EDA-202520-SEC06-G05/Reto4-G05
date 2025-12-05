@@ -23,7 +23,7 @@ def new_vertex(key, value):
     .. include:: code-examples/Graph/vertex/new_vertex.rst
 
     """
-    vertex = {"key": key, "value": value, "adjacents": mp.new_map(200, 0.5, None)}
+    vertex = {"key": key, "value": value, "adjacents": mp.new_map(5000, 0.5, None)}
     return vertex
 
 

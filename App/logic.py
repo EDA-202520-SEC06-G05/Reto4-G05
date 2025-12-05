@@ -790,12 +790,11 @@ def req_1(catalog,gps_origen,gps_destino,tag_id):
 
 def req_2(catalog, gps_origen, gps_destino, radio):
 
-    lat_o = float(gps_origen[0])
-    lon_o = float(gps_origen[1])
-    lat_d = float(gps_destino[0])
-    lon_d = float(gps_destino[1])
-
     grafo = catalog["graph_distance"]
+
+    lat_o, lon_o = float(gps_origen[0]), float(gps_origen[1])
+    lat_d, lon_d = float(gps_destino[0]), float(gps_destino[1])
+
     lista_vertices = dg.vertices(grafo)
 
     nodoA = None
@@ -809,11 +808,8 @@ def req_2(catalog, gps_origen, gps_destino, radio):
         vert = dg.get_vertex(grafo, vid)
         info = vert["value"]
 
-        lat = info["lat"]
-        lon = info["lon"]
-
-        dA = haversine(lon_o, lat_o, lon, lat)
-        dB = haversine(lon_d, lat_d, lon, lat)
+        dA = haversine(lon_o, lat_o, info["lon"], info["lat"])
+        dB = haversine(lon_d, lat_d, info["lon"], info["lat"])
 
         if dA < bestA:
             bestA = dA
@@ -825,7 +821,6 @@ def req_2(catalog, gps_origen, gps_destino, radio):
 
         i += 1
 
-
     if nodoA is None or nodoB is None:
         return {"mensaje": "No se pudieron identificar puntos migratorios."}
 
@@ -833,67 +828,70 @@ def req_2(catalog, gps_origen, gps_destino, radio):
 
     if not bfs.has_path_to(nodoB, visit):
         return {
-            "mensaje": "No existe ningun camino entre los puntos.",
+            "mensaje": "No existe camino entre origen y destino.",
             "ruta": None
         }
 
     stack_path = bfs.path_to(nodoB, visit)
 
-    lista_camino = al.new_list()
-    temp = st.new_stack()
-
-    last_inside = None
-
+    ruta = al.new_list()
     while not st.is_empty(stack_path):
-        v = st.pop(stack_path)
-        st.push(temp, v)
-        al.add_last(lista_camino, v)
+        al.add_last(ruta, st.pop(stack_path))
 
-    
-    stack_path["elements"] = temp["elements"]
-    stack_path["size"] = temp["size"]
+    total_puntos = al.size(ruta)
 
-    j = 0
-    elems = lista_camino["elements"]
-    while j < lista_camino["size"]:
-        vid = al.get_element(elems, j)
+    ultimo = None
+
+    i = 0
+    while i < total_puntos:
+        vid = al.get_element(ruta, i)
         vert = dg.get_vertex(grafo, vid)
         info = vert["value"]
 
-        lat = info["lat"]
-        lon = info["lon"]
+        d = haversine(lon_o, lat_o, info["lon"], info["lat"])
 
-        d = haversine(lon_o, lat_o, lon, lat)
         if d <= radio:
-            last_inside = vid
+            ultimo = vid
 
-        j += 1
+        i += 1
 
-    total_distance = 0
+    total_dist = 0
     prev = None
 
-    j = 0
-    while j < lista_camino["size"]:
-        v = al.get_element(elems, j)
+    i = 0
+    while i < total_puntos:
+        vid = al.get_element(ruta, i)
 
         if prev is not None:
-            vert_prev = dg.get_vertex(grafo, prev)
-            edge = vt.get_edge(vert_prev, v)
+            vprev = dg.get_vertex(grafo, prev)
+            edge = vt.get_edge(vprev, vid)
             if edge is not None:
-                total_distance += edge["weight"]
+                total_dist += edge["weight"]
 
-        prev = v
-        j += 1
+        prev = vid
+        i += 1
+
+    primeros5 = al.new_list()
+    ultimos5 = al.new_list()
+
+    limit = min(5, total_puntos)
+
+    for i in range(limit):
+        al.add_last(primeros5, al.get_element(ruta, i))
+
+    for i in range(limit):
+        idx = total_puntos - limit + i
+        al.add_last(ultimos5, al.get_element(ruta, idx))
 
     return {
         "mensaje": "Ruta encontrada",
-        "ultimo_dentro_radio": last_inside,
-        "distancia_total": total_distance,
-        "total_puntos": lista_camino["size"],
-        "ruta": lista_camino
+        "ultimo_dentro_radio": ultimo,
+        "distancia_total": total_dist,
+        "total_puntos": total_puntos,
+        "ruta": ruta,
+        "primeros5": primeros5,
+        "ultimos5": ultimos5
     }
-    
-    # TODO: Modificar el requerimiento 2
 
 
 def req_3(catalog):
@@ -1128,8 +1126,6 @@ def req_5(catalog, pto_origen, pto_destino, seleccion):
         if dB < bestB:
             bestB = dB
             nodoB = vid
-        print (nodoA)
-        print(nodoB)
         i += 1
 
     if nodoA is None or nodoB is None:

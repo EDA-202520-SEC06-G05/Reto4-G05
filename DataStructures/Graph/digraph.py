@@ -17,17 +17,24 @@ def insert_vertex(my_graph, key_u, info_u):
 
 def add_edge(my_graph, key_u, key_v, weight=1.0):
     vertex_u = lp.get(my_graph["vertices"], key_u)
-    if vertex_u is None:
-        raise Exception("El vertice u no existe")
     vertex_v = lp.get(my_graph["vertices"], key_v)
-    if vertex_v is None:
-        raise Exception("El vertice v no existe")
-    edge_u_and_v = vt.get_edge(vertex_u, key_v)
-    if edge_u_and_v is None:
+
+    # U → V
+    edge_uv = vt.get_edge(vertex_u, key_v)
+    if edge_uv is None:
         vt.add_adjacent(vertex_u, key_v, weight)
-        my_graph["num_edges"]+=1
+        my_graph["num_edges"] += 1
     else:
-        ed.set_weight(edge_u_and_v, weight)
+        ed.set_weight(edge_uv, weight)
+
+    # V → U  (muy importante!)
+    edge_vu = vt.get_edge(vertex_v, key_u)
+    if edge_vu is None:
+        vt.add_adjacent(vertex_v, key_u, weight)
+        my_graph["num_edges"] += 1
+    else:
+        ed.set_weight(edge_vu, weight)
+
     return my_graph
 
 def contains_vertex(my_graph, key_u):
